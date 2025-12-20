@@ -2,65 +2,144 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>OttoBagno | Ürünler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OttoBagno | Ürün Kataloğu</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+      body { background-color: #f4f6f9; }
+      .product-card { transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+      .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+      .navbar-brand { font-weight: 700; letter-spacing: 1px; }
+  </style>
 </head>
 <body>
 
-<h1>Ürünler</h1>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="#"><i class="fa-solid fa-layer-group"></i> OTTO BAGNO</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item" id="adminPanel" style="display:none;">
+            <a class="nav-link text-warning fw-bold me-3" href="admin.html">
+                <i class="fa-solid fa-user-shield"></i> Yönetici Paneli
+            </a>
+        </li>
+        
+        <li class="nav-item me-3">
+            <a href="cart.html" class="btn btn-outline-light position-relative">
+                <i class="fa-solid fa-cart-shopping"></i> Sepetim
+                <span id="cartCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <span class="nav-link active"><i class="fa-solid fa-user-circle"></i> <span id="userName">Misafir</span></span>
+        </li>
+        <li class="nav-item ms-2">
+            <button class="btn btn-sm btn-danger" onclick="logout()">Çıkış</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 
-<!-- Kullanıcı Bilgisi -->
-<div id="userBar">
-  Hoşgeldin: <span id="userName"></span>
-  | <a href="cart.html">Sepet (<span id="cartCount">0</span>)</a>
-  | <button onclick="logout()">Çıkış</button>
+<div class="container my-5">
+  <div class="row">
+    
+    <div class="col-lg-3 mb-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold py-3">
+            <i class="fa-solid fa-filter text-primary"></i> Filtrele
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold">SINIF (CLASS)</label>
+                <select id="classSelect" class="form-select"><option value="">Tümü</option></select>
+            </div>
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold">KOLEKSİYON</label>
+                <select id="collectionSelect" class="form-select"><option value="">Tümü</option></select>
+            </div>
+            <button type="button" id="btnResetFilters" class="btn btn-secondary w-100">Temizle</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-9">
+        <h4 class="mb-3">Ürün Kataloğu</h4>
+        
+        <div id="products" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            <div class="text-center w-100 mt-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Ürünler Yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+  </div>
 </div>
 
-<hr>
-
-<!-- Admin alanı -->
-<div id="adminPanel" style="display:none;">
-  <b>Admin Paneli:</b>
-  <a href="admin.html">Admin Sayfası</a>
-  <hr>
-</div>
-
-<!-- Filtre -->
-<h3>Filtre</h3>
-
-<label>Class:</label>
-<select id="classSelect"></select>
-
-<label>Collection:</label>
-<select id="collectionSelect"></select>
-
-<button type="button" id="btnResetFilters">Filtreyi Sıfırla</button>
-
-<hr>
-
-<!-- Ürünler -->
-<h3>Ürün Listesi</h3>
-<ul id="products"></ul>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="app.js"></script>
 
 <script>
-  // 🔐 Login kontrol + sayfa init
   (function () {
-    const customer = requireCustomerOrRedirect();
+    console.log("Sayfa başlatılıyor...");
 
-    // Kullanıcı adı yaz
-    document.getElementById('userName').innerText =
-      `${customer.FirstName} ${customer.LastName} (ID: ${customer.CustomerID})`;
-
-    // Admin mi?
-    if (
-      customer.FirstName.toLowerCase() === 'admin' &&
-      customer.LastName.toLowerCase() === 'admin'
-    ) {
-      document.getElementById('adminPanel').style.display = 'block';
+    // app.js kontrolü
+    if (typeof requireCustomerOrRedirect !== 'function') {
+        console.error("HATA: app.js dosyası yüklenemedi veya fonksiyonlar eksik.");
+        return;
     }
 
-    initCatalogPage();
+    try {
+        const customer = requireCustomerOrRedirect();
+        if (!customer) return; // Login sayfasına yönlendirildiyse dur.
+
+        // Kullanıcı adını yaz
+        const nameEl = document.getElementById('userName');
+        if (nameEl) {
+            nameEl.innerText = (customer.FirstName || '') + ' ' + (customer.LastName || '');
+        }
+
+        // --- DÜZELTİLEN KISIM ---
+        // Email yoksa (undefined ise) .includes çalıştırma!
+        let isAdmin = false;
+        
+        // 1. İsim kontrolü
+        if (customer.FirstName && customer.FirstName.toLowerCase() === 'admin') {
+            isAdmin = true;
+        }
+        // 2. Email kontrolü (GÜVENLİ HALE GETİRİLDİ)
+        // customer.Email && ... diyerek önce var mı diye bakıyoruz.
+        else if (customer.Email && customer.Email.includes('admin')) {
+            isAdmin = true;
+        }
+
+        if (isAdmin) {
+            const pnl = document.getElementById('adminPanel');
+            if (pnl) pnl.style.display = 'block';
+        }
+        // ------------------------
+
+        // Ürünleri yükle
+        if (typeof initCatalogPage === 'function') {
+            initCatalogPage();
+        } else {
+            console.error("initCatalogPage fonksiyonu bulunamadı.");
+        }
+
+    } catch (err) {
+        console.error("Beklenmeyen hata:", err);
+    }
   })();
 </script>
 

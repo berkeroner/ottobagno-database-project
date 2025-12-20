@@ -1,290 +1,497 @@
-// ===================== AUTH (Customer) =====================
+// ===================== AYARLAR =====================
+const API_BASE = ''; // Backend farklı porttaysa: 'http://localhost:3000'
+
+// ===================== AUTH & GÜVENLİK =====================
 
 function getLoggedInCustomer() {
-  const s = localStorage.getItem('customer');
-  return s ? JSON.parse(s) : null;
+    const s = localStorage.getItem('customer');
+    return s ? JSON.parse(s) : null;
 }
 
 function requireCustomerOrRedirect() {
-  const c = getLoggedInCustomer();
-  if (!c || !c.CustomerID) {
-    window.location.href = 'login.html';
-    return null;
-  }
-  return c;
+    const c = getLoggedInCustomer();
+    // CustomerID yoksa Login'e at
+    if (!c || !c.CustomerID) {
+        window.location.href = 'login.html';
+        return null;
+    }
+    return c;
 }
 
 function logout() {
-  localStorage.removeItem('customer');
-  window.location.href = 'login.html';
+    localStorage.removeItem('customer');
+    localStorage.removeItem('cart');
+    window.location.href = 'login.html';
 }
 
 async function login() {
-  const firstName = document.getElementById('firstName').value.trim();
-  const lastName = document.getElementById('lastName').value.trim();
-  const msgEl = document.getElementById('loginMsg');
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const msgEl = document.getElementById('loginMsg');
 
-  if (!firstName || !lastName) {
-    msgEl.innerText = 'İsim ve soyisim gir.';
-    return;
-  }
+    if (!firstName || !lastName) {
+        msgEl.innerText = 'Lütfen Ad ve Soyad giriniz.';
+        return;
+    }
 
-  // ✅ ADMIN KURALİ (DB'ye gitmez)
-  if (firstName.toLowerCase() === 'admin' && lastName.toLowerCase() === 'admin') {
-    const adminObj = { CustomerID: -1, FirstName: 'admin', LastName: 'admin' };
-    localStorage.setItem('customer', JSON.stringify(adminObj));
-    window.location.href = 'admin.html';
-    return;
-  }
+    // 🔴 ADMIN GİRİŞİ (Hardcoded)
+    if (firstName.toLowerCase() === 'admin' && lastName.toLowerCase() === 'admin') {
+        const adminObj = { 
+            CustomerID: -1, 
+            FirstName: 'System', 
+            LastName: 'Admin',
+            Email: 'admin@ottobagno.com' // Email hatası olmasın diye ekledik
+        };
+        localStorage.setItem('customer', JSON.stringify(adminObj));
+        window.location.href = 'admin.html';
+        return;
+    }
 
-  // ✅ NORMAL CUSTOMER LOGIN (SP ile)
-  const res = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ firstName, lastName })
-  });
+    // 🔵 MÜŞTERİ GİRİŞİ (API)
+    try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ firstName, lastName })
+        });
 
-  if (!res.ok) {
-    msgEl.innerText = await res.text();
-    return;
-  }
+        if (!res.ok) {
+            msgEl.innerText = await res.text();
+            return;
+        }
 
-  const customer = await res.json();
-  localStorage.setItem('customer', JSON.stringify(customer));
-  window.location.href = 'index.html';
+        const customer = await res.json();
+        localStorage.setItem('customer', JSON.stringify(customer));
+        window.location.href = 'index.html';
+    } catch (err) {
+        msgEl.innerText = "Sunucu bağlantı hatası.";
+        console.error(err);
+    }
 }
 
+// ===================== SEPET MANTIĞI (CART) =====================
 
-
-// ===================== CART STORAGE =====================
-
-function getCart() {
-  return JSON.parse(localStorage.getItem('cart') || '[]');
-}
+function getCart() { return JSON.parse(localStorage.getItem('cart') || '[]'); }
 
 function setCart(cart) {
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateCartCount();
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartUI();
 }
 
-function updateCartCount() {
-  const cart = getCart();
-  const count = cart.reduce((s, it) => s + it.quantity, 0);
-  const el = document.getElementById('cartCount');
-  if (el) el.innerText = count;
+function updateCartUI() {
+    const cart = getCart();
+    // Sepetteki toplam ürün adedini hesapla
+    const totalQty = cart.reduce((s, it) => s + Number(it.quantity), 0); 
+
+    // 1. Navbar'daki Kırmızı Yuvarlak Rozeti Güncelle
+    const navBadge = document.getElementById('cartCount');
+    if (navBadge) {
+        navBadge.innerText = totalQty;
+    }
+
+    // 2. Sepet Sayfasındaki Gri Rozeti Güncelle (SORUNUN ÇÖZÜMÜ BURADA)
+    const pageBadge = document.getElementById('itemCountBadge');
+    if (pageBadge) {
+        pageBadge.innerText = `${totalQty} Ürün`;
+    }
+
+    // 3. Sepet Özeti Toplamını Güncelle
+    const totalEl = document.getElementById('cartTotal');
+    if (totalEl) {
+        const totalPrice = cart.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
+        totalEl.innerText = totalPrice.toFixed(2);
+    }
 }
 
-function cartTotal(cart) {
-  return cart.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
+function addToCart(product) {
+    const cart = getCart();
+    const code = String(product.ProductCode).trim();
+    const price = Number(product.SalesPriceWithVAT || product.SalesPrice);
+
+    // 1. İlgili inputtan miktarı oku
+    const qtyInput = document.getElementById(`qty-${code}`);
+    let qtyToAdd = 1; // Varsayılan
+
+    if (qtyInput) {
+        qtyToAdd = parseInt(qtyInput.value);
+        if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
+            alert("Lütfen geçerli bir adet giriniz.");
+            return;
+        }
+    }
+
+    // 2. Stok Kontrolü (Sepetteki mevcut miktar + Eklenecek miktar)
+    const existing = cart.find(x => x.productCode === code);
+    const currentQtyInCart = existing ? existing.quantity : 0;
+
+    if (currentQtyInCart + qtyToAdd > product.StockQuantity) {
+        alert(`Stok yetersiz! Stoktaki miktar: ${product.StockQuantity}, Sepetinizdeki: ${currentQtyInCart}`);
+        return;
+    }
+
+    // 3. Sepete Ekleme İşlemi
+    if (existing) {
+        existing.quantity += qtyToAdd;
+    } else {
+        cart.push({
+            productCode: code,
+            productName: product.ProductName,
+            quantity: qtyToAdd,
+            unitPrice: price
+        });
+    }
+
+    setCart(cart);
+    
+    // 4. BİLDİRİM GÖSTER (Yeni Eklenen Özellik)
+    showNotification(`${product.ProductName} (${qtyToAdd} adet) sepete eklendi!`);
+    
+    // 5. Inputu tekrar 1 yap (Kullanım kolaylığı için)
+    if(qtyInput) qtyInput.value = 1;
 }
 
-// ===================== CATALOG =====================
+// ===================== SAYFA: INDEX (KATALOG) =====================
 
 async function initCatalogPage() {
-  const c = requireCustomerOrRedirect();
-  if (!c) return;
+    const c = requireCustomerOrRedirect();
+    if (!c) return;
 
-  updateCartCount();
-  await loadFilters();
-  await loadFilteredProducts();
+    document.getElementById('userName').innerText = `${c.FirstName} ${c.LastName}`;
+    updateCartUI();
+    
+    // Admin Linki Göster
+    if (c.FirstName === 'System' && c.LastName === 'Admin') {
+        const pnl = document.getElementById('adminPanel');
+        if(pnl) pnl.style.display = 'block';
+    }
+
+    await loadFilters();
+    await loadFilteredProducts();
 }
 
 async function loadFilters() {
-  const classSelect = document.getElementById('classSelect');
-  const collectionSelect = document.getElementById('collectionSelect');
+    const classSelect = document.getElementById('classSelect');
+    const collectionSelect = document.getElementById('collectionSelect');
+    if(!classSelect) return;
 
-  classSelect.innerHTML = `<option value="">(Hepsi)</option>`;
-  collectionSelect.innerHTML = `<option value="">(Hepsi)</option>`;
+    try {
+        const [classes, colls] = await Promise.all([
+            fetch(`${API_BASE}/api/products/classes`).then(r => r.json()),
+            fetch(`${API_BASE}/api/products/collections`).then(r => r.json())
+        ]);
 
-  const classes = await fetch('/api/products/classes').then(r => r.json());
-  classes.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.ClassID;
-    opt.innerText = c.ClassName;
-    classSelect.appendChild(opt);
-  });
+        classes.forEach(c => classSelect.innerHTML += `<option value="${c.ClassID}">${c.ClassName}</option>`);
+        colls.forEach(c => collectionSelect.innerHTML += `<option value="${c.CollectionID}">${c.CollectionName}</option>`);
 
-  const colls = await fetch('/api/products/collections').then(r => r.json());
-  colls.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.CollectionID;
-    opt.innerText = c.CollectionName;
-    collectionSelect.appendChild(opt);
-  });
-
-  // ✅ ÖNEMLİ: Filtre değişince listeyi yenile
-  classSelect.onchange = loadFilteredProducts;
-  collectionSelect.onchange = loadFilteredProducts;
-
-  // ✅ Reset butonu
-  const btnReset = document.getElementById('btnResetFilters');
-  if (btnReset) btnReset.onclick = resetFilters;
+        classSelect.onchange = loadFilteredProducts;
+        collectionSelect.onchange = loadFilteredProducts;
+        document.getElementById('btnResetFilters').onclick = () => {
+            classSelect.value = ''; collectionSelect.value = ''; loadFilteredProducts();
+        };
+    } catch(e) { console.log("Filtre yükleme hatası", e); }
 }
-
 
 async function loadFilteredProducts() {
-  const classId = document.getElementById('classSelect')?.value || '';
-  const collectionId = document.getElementById('collectionSelect')?.value || '';
+    const container = document.getElementById('products');
+    // Yükleniyor ikonu
+    container.innerHTML = '<div class="text-center w-100 mt-5"><div class="spinner-border text-primary"></div></div>';
 
-  const qs = new URLSearchParams();
-  if (classId) qs.set('classId', classId);
-  if (collectionId) qs.set('collectionId', collectionId);
+    const qs = new URLSearchParams();
+    const cId = document.getElementById('classSelect')?.value;
+    const coId = document.getElementById('collectionSelect')?.value;
+    if(cId) qs.set('classId', cId);
+    if(coId) qs.set('collectionId', coId);
 
-  const url = '/api/products/filtered' + (qs.toString() ? `?${qs.toString()}` : '');
-  console.log("FILTER URL:", url);
+    try {
+        // Backend endpoint (yoksa fallback)
+        let url = `${API_BASE}/api/products/filtered?${qs}`;
+        let res = await fetch(url);
+        
+        if(!res.ok && res.status === 404) {
+             res = await fetch(`${API_BASE}/api/products`); // Fallback
+        }
+        
+        const data = await res.json();
+        container.innerHTML = '';
 
-  const res = await fetch(url);
-  const data = await res.json();
+        if(!data.length) { container.innerHTML = '<div class="alert alert-warning w-100">Ürün yok.</div>'; return; }
 
-  const ul = document.getElementById('products');
-  ul.innerHTML = '';
+        data.forEach(p => {
+            const price = (p.SalesPriceWithVAT || p.SalesPrice).toFixed(2);
+            // Ürün kodu ile benzersiz ID oluşturuyoruz: qty-P001 gibi
+            const qtyInputId = `qty-${p.ProductCode}`;
 
-  data.forEach(p => {
-    const li = document.createElement('li');
-    li.innerText = `${p.ProductCode} - ${p.ProductName} (Stock: ${p.StockQuantity}, Price: ${p.SalesPrice}) `;
-
-    const btn = document.createElement('button');
-    btn.innerText = 'Sepete Ekle';
-    btn.onclick = () => addToCart(p);
-    li.appendChild(btn);
-
-    ul.appendChild(li);
-  });
+            container.innerHTML += `
+            <div class="col">
+                <div class="card h-100 shadow-sm product-card">
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                        <i class="fa-solid fa-box-open fa-3x text-secondary"></i>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title fw-bold text-truncate" title="${p.ProductName}">${p.ProductName}</h6>
+                        <small class="text-muted mb-3">Kod: ${p.ProductCode}</small>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fs-5 text-primary fw-bold">${price} ₺</span>
+                                <span class="badge bg-light text-secondary border">Stok: ${p.StockQuantity}</span>
+                            </div>
+                            
+                            <div class="input-group">
+                                <input type="number" id="${qtyInputId}" class="form-control text-center" value="1" min="1" max="${p.StockQuantity}">
+                                <button class="btn btn-primary" onclick='addToCart(${JSON.stringify(p)})'>
+                                    <i class="fa-solid fa-cart-plus"></i> Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+    } catch(e) { container.innerHTML = `<div class="alert alert-danger w-100">${e.message}</div>`; }
 }
 
+// ===================== SAYFA: ADMIN PANEL =====================
 
-function resetFilters() {
-  document.getElementById('classSelect').value = '';
-  document.getElementById('collectionSelect').value = '';
-  loadFilteredProducts();
-}
+function initAdminPage() {
+    const c = requireCustomerOrRedirect();
+    if (!c) return;
 
-function addToCart(p) {
-  const qty = parseInt(prompt('Kaç adet?'), 10);
-  if (!qty || qty <= 0) return alert('Quantity geçersiz.');
-
-  if (qty > p.StockQuantity) return alert('Yetersiz stok!');
-
-  const cart = getCart();
-  const code = String(p.ProductCode).trim().toUpperCase();
-
-  const existing = cart.find(x => x.productCode === code);
-  if (existing) existing.quantity += qty;
-  else {
-    cart.push({
-      productCode: code,
-      productName: p.ProductName,
-      quantity: qty,
-      unitPrice: Number(p.SalesPrice)
-    });
-  }
-
-  setCart(cart);
-  alert('Sepete eklendi.');
-}
-
-// ===================== CART PAGE =====================
-
-function initCartPage() {
-  const c = requireCustomerOrRedirect();
-  if (!c) return;
-
-  updateCartCount();
-  renderCartPage();
-
-  const btn = document.getElementById('btnCheckout');
-  if (btn) {
-    btn.onclick = () => {
-      const cart = getCart();
-      if (!cart || cart.length === 0) return alert('Sepet boş.');
-      window.location.href = 'checkout.html';
-    };
-  }
-}
-
-function renderCartPage() {
-  const cart = getCart();
-  const ul = document.getElementById('cartList');
-  const totalEl = document.getElementById('cartTotal');
-
-  ul.innerHTML = '';
-
-  cart.forEach((it, idx) => {
-    const li = document.createElement('li');
-
-    const qtyInput = document.createElement('input');
-    qtyInput.type = 'number';
-    qtyInput.min = '1';
-    qtyInput.value = it.quantity;
-    qtyInput.style.width = '60px';
-
-    qtyInput.onchange = () => {
-      const newQty = parseInt(qtyInput.value, 10);
-      if (!newQty || newQty <= 0) {
-        alert('Quantity geçersiz.');
-        qtyInput.value = it.quantity;
+    // Admin Değilse At
+    if (c.FirstName !== 'System' && c.LastName !== 'Admin') {
+        alert("Yetkisiz Giriş!");
+        window.location.href = 'index.html';
         return;
-      }
-      const newCart = getCart();
-      newCart[idx].quantity = newQty;
-      setCart(newCart);
-      renderCartPage();
-    };
+    }
 
-    const rm = document.createElement('button');
-    rm.innerText = 'Kaldır';
-    rm.onclick = () => {
-      const newCart = getCart();
-      newCart.splice(idx, 1);
-      setCart(newCart);
-      renderCartPage();
-    };
+    document.getElementById('adminInfo').innerText = `Admin: ${c.FirstName} ${c.LastName}`;
 
-    li.appendChild(document.createTextNode(`${it.productCode} - ${it.productName} | Unit: ${it.unitPrice} | Qty: `));
-    li.appendChild(qtyInput);
-    li.appendChild(document.createTextNode(' '));
-    li.appendChild(rm);
-
-    ul.appendChild(li);
-  });
-
-  totalEl.innerText = cartTotal(cart).toFixed(2);
+    // Event Bağlamaları
+    document.getElementById('btnAddProduct').onclick = adminAddProduct;
+    document.getElementById('btnDeleteProduct').onclick = adminDeleteProduct;
+    document.getElementById('btnEmployees').onclick = adminLoadEmployees;
+    document.getElementById('btnOrders').onclick = adminLoadOrders;
 }
 
-// ===================== CHECKOUT PAGE =====================
+async function adminAddProduct() {
+    const body = {
+        productCode: document.getElementById('pCode').value,
+        productName: document.getElementById('pName').value,
+        salesPrice: Number(document.getElementById('pPrice').value),
+        color: document.getElementById('pColor').value,
+        stockQuantity: Number(document.getElementById('pStock').value),
+        classId: document.getElementById('pClass').value || null,
+        collectionId: document.getElementById('pColl').value || null
+    };
 
-function initCheckoutPage() {
-  const customer = requireCustomerOrRedirect();
-  if (!customer) return;
-
-  const info = document.getElementById('customerInfo');
-  if (info) info.innerText = `${customer.FirstName} ${customer.LastName} (ID: ${customer.CustomerID})`;
-
-  const btn = document.getElementById('btnCheckoutPay');
-  if (!btn) {
-    alert("btnCheckoutPay bulunamadı!");
-    return;
-  }
-
-  btn.onclick = checkoutAndPay;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/products/add`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const txt = await res.text();
+        document.getElementById('adminMsg').innerText = res.ok ? "✅ Ürün Eklendi" : "❌ Hata: " + txt;
+        document.getElementById('addProductForm').reset();
+    } catch(e) { alert(e.message); }
 }
 
-async function checkoutAndPay() {
-  try {
+async function adminDeleteProduct() {
+    const code = document.getElementById('delCode').value;
+    if(!code) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/products/delete`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ productCode: code })
+        });
+        const txt = await res.text();
+        document.getElementById('adminMsg').innerText = res.ok ? "✅ Silindi" : "❌ Hata: " + txt;
+    } catch(e) { alert(e.message); }
+}
+
+async function adminLoadEmployees() {
+    const tbody = document.getElementById('empList');
+    tbody.innerHTML = '<tr><td colspan="4">Yükleniyor...</td></tr>';
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/employees`);
+        const data = await res.json();
+        tbody.innerHTML = '';
+        data.forEach(e => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${e.EmployeeID}</td>
+                <td>${e.FirstName} ${e.LastName}</td>
+                <td><span class="badge bg-info text-dark">${e.Role}</span></td>
+                <td>${e.Email}</td>
+            </tr>`;
+        });
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="4" class="text-danger">${e.message}</td></tr>`; }
+}
+
+async function adminLoadOrders() {
+    const tbody = document.getElementById('orderList');
+    tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/orders`);
+        const data = await res.json();
+        tbody.innerHTML = '';
+        data.forEach(o => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${o.OrderID}</td>
+                <td>${o.CustomerID}</td>
+                <td><span class="badge bg-${o.OrderStatus==='New'?'primary': o.OrderStatus==='Paid'?'success':'secondary'}">${o.OrderStatus}</span></td>
+                <td>${o.TotalAmount} ₺</td>
+                <td>${new Date(o.OrderDate).toLocaleDateString()}</td>
+            </tr>`;
+        });
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" class="text-danger">${e.message}</td></tr>`; }
+}
+
+// ===================== SAYFA: CHECKOUT & PAYMENT =====================
+
+
+
+// PAYMENT.HTML (Manuel Ödeme) Fonksiyonu
+async function pay() {
+    const orderId = document.getElementById('payOrderId').value;
+    const amount = document.getElementById('payAmount').value;
+    const method = document.getElementById('payMethod').value;
+    const resEl = document.getElementById('payResult');
+
+    if(!orderId || !amount) { resEl.innerText = "Eksik bilgi."; resEl.className = "text-danger"; return; }
+
+    try {
+        // Backend'de sp_AddPayment çağıran endpoint olması lazım
+        // Örn: /api/payments/add
+        // Şimdilik mock (taklit) yapıyorum:
+        console.log(`Ödeme: Order ${orderId}, Tutar ${amount}, Yöntem ${method}`);
+        
+        // Gerçek istek:
+        /*
+        const res = await fetch(`${API_BASE}/api/payments/add`, {
+            method: 'POST', 
+            body: JSON.stringify({orderId, amount, method, ...})
+        });
+        */
+        
+        resEl.innerText = "✅ Ödeme Başarıyla Kaydedildi!";
+        resEl.className = "text-success fw-bold";
+        setTimeout(() => window.location.href='index.html', 2000);
+
+    } catch(e) {
+        resEl.innerText = "Hata: " + e.message;
+    }
+}
+
+// ===================== SEPET SAYFASI (Render) =====================
+function initCartPage() {
+    updateCartUI();
     const cart = getCart();
-    if (!cart || cart.length === 0) return alert('Sepet boş.');
+    const list = document.getElementById('cartList');
+    if(!list) return;
 
+    list.innerHTML = '';
+    if(!cart.length) { list.innerHTML = '<li class="list-group-item text-center py-5">Sepet Boş</li>'; return; }
+
+    cart.forEach((it, idx) => {
+        list.innerHTML += `
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h6 class="mb-0 fw-bold">${it.productName}</h6>
+                <small class="text-muted">${it.productCode}</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span>${it.quantity} x ${it.unitPrice} ₺</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${idx})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </li>`;
+    });
+}
+function removeFromCart(idx) {
+    const cart = getCart();
+    cart.splice(idx, 1);
+    setCart(cart);
+    initCartPage();
+}
+// ===================== BİLDİRİM (TOAST) SİSTEMİ =====================
+function showNotification(message) {
+    // Varsa eski bildirimi kaldır
+    const oldToast = document.getElementById('customToast');
+    if (oldToast) oldToast.remove();
+
+    // Yeni bildirim HTML'i oluştur
+    const toast = document.createElement('div');
+    toast.id = 'customToast';
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '1050';
+    toast.innerHTML = `
+        <div class="toast show align-items-center text-white bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fa-solid fa-check-circle me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // 3 saniye sonra otomatik kaybolsun
+    setTimeout(() => {
+        if(toast) toast.remove();
+    }, 3000);
+}
+// ===================== SAYFA: CHECKOUT (Ödeme Sayfası Başlatıcı) =====================
+// ===================== SAYFA: CHECKOUT & PAYMENT =====================
+
+// Sayfa yüklendiğinde çalışacak başlatıcı fonksiyon
+function initCheckoutPage() {
+    console.log("Checkout sayfası başlatılıyor..."); 
+    
     const customer = requireCustomerOrRedirect();
     if (!customer) return;
 
-    const usedCurrency = document.getElementById('usedCurrency').value.trim();
-    const countryId = parseInt(document.getElementById('countryId').value, 10);
-    const paymentMethod = document.getElementById('paymentMethod').value;
+    // 1. Müşteri adını ekrana yaz
+    const info = document.getElementById('customerInfo');
+    if (info) info.innerText = `${customer.FirstName} ${customer.LastName}`;
 
-    if (!usedCurrency || !countryId || !paymentMethod) {
-      return alert('Currency / CountryID / PaymentMethod boş olamaz.');
+    // 2. Butonu bul ve tıklama özelliğini ekle
+    const btn = document.getElementById('btnCheckoutPay');
+    if (btn) {
+        // Eğer daha önce onclick tanımlıysa temizle, yenisini ekle
+        btn.onclick = null; 
+        btn.onclick = checkoutAndPay;
+        console.log("Ödeme butonu aktif edildi.");
+    } else {
+        console.error("HATA: 'btnCheckoutPay' id'li buton bulunamadı!");
+    }
+}
+
+// Butona tıklanınca çalışacak asıl ödeme fonksiyonu
+async function checkoutAndPay() {
+    console.log("Ödeme işlemi tetiklendi.");
+
+    // 1. Sepet ve Müşteri Kontrolü
+    const cart = getCart();
+    if (!cart || cart.length === 0) return alert('Sepetiniz boş, ödeme yapılamaz.');
+
+    const customer = requireCustomerOrRedirect();
+    
+    // 2. Form Verilerini Al
+    const usedCurrency = document.getElementById('usedCurrency')?.value.trim();
+    const countryIdVal = document.getElementById('countryId')?.value;
+    const paymentMethod = document.getElementById('paymentMethod')?.value;
+
+    if (!usedCurrency || !countryIdVal || !paymentMethod) {
+      return alert('Lütfen para birimi, ülke kodu ve ödeme yöntemini kontrol ediniz.');
     }
 
+    const countryId = parseInt(countryIdVal, 10);
+
+    // 3. Backend'e Gönderilecek Veriyi Hazırla
     const body = {
       customerId: customer.CustomerID,
       usedCurrency,
@@ -296,123 +503,42 @@ async function checkoutAndPay() {
         unitPrice: Number(x.unitPrice)
       }))
     };
+    
+    // 4. Butonu Pasife Al (Çift tıklamayı önlemek için)
+    const btn = document.getElementById('btnCheckoutPay');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
 
-    const res = await fetch('/api/orders/checkout-pay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    // 5. API İsteği Gönder
+    try {
+        // API_BASE app.js'in en başında tanımlı olmalı (boş ise '')
+        const res = await fetch(`${API_BASE}/api/orders/checkout-pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
 
-    if (!res.ok) {
-      const t = await res.text();
-      alert(t);
-      return;
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText);
+        }
+
+        const data = await res.json();
+        
+        // 6. Başarılı İşlem
+        alert(`✅ Sipariş Başarıyla Alındı!\nSipariş No: ${data.orderId}\nTutar: ${data.totalAmount} ${usedCurrency}`);
+
+        localStorage.removeItem('cart'); // Sepeti temizle
+        window.location.href = 'index.html'; // Anasayfaya dön
+
+    } catch (e) {
+        // 7. Hata Durumu
+        console.error("Ödeme Hatası:", e);
+        alert("İşlem Başarısız: " + e.message);
+        
+        // Butonu eski haline getir
+        btn.disabled = false;
+        btn.innerHTML = oldText;
     }
-
-    const data = await res.json();
-    alert(`✅ Ödeme alındı ve sipariş oluşturuldu!\nOrderID: ${data.orderId}\nTotal: ${data.totalAmount}`);
-
-    localStorage.removeItem('cart');
-    window.location.href = 'index.html';
-  } catch (e) {
-    console.error(e);
-    alert("Hata: " + e.message);
-  }
-}
-
-async function adminAddProduct() {
-  const msg = document.getElementById('adminMsg');
-  msg.innerText = '';
-
-  const body = {
-    productCode: document.getElementById('pCode').value.trim(),
-    productName: document.getElementById('pName').value.trim(),
-    salesPrice: Number(document.getElementById('pPrice').value),
-    color: document.getElementById('pColor').value.trim(),
-    stockQuantity: Number(document.getElementById('pStock').value),
-    classId: document.getElementById('pClass').value ? Number(document.getElementById('pClass').value) : null,
-    collectionId: document.getElementById('pColl').value ? Number(document.getElementById('pColl').value) : null
-  };
-
-  const res = await fetch('/api/admin/products/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    msg.innerText = await res.text();
-    return;
-  }
-
-  alert('✅ Ürün eklendi');
-}
-
-async function adminDeleteProduct() {
-  const msg = document.getElementById('adminMsg');
-  msg.innerText = '';
-
-  const productCode = document.getElementById('delCode').value.trim();
-  if (!productCode) return alert('ProductCode gir');
-
-  const res = await fetch('/api/admin/products/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productCode })
-  });
-
-  if (!res.ok) {
-    msg.innerText = await res.text();
-    return;
-  }
-
-  alert('✅ Ürün silindi');
-}
-
-async function adminLoadEmployees() {
-  const msg = document.getElementById('adminMsg');
-  msg.innerText = '';
-
-  const ul = document.getElementById('empList');
-  ul.innerHTML = 'Yükleniyor...';
-
-  const res = await fetch('/api/admin/employees');
-  if (!res.ok) {
-    ul.innerHTML = '';
-    msg.innerText = await res.text();
-    return;
-  }
-
-  const data = await res.json();
-  ul.innerHTML = '';
-
-  data.forEach(e => {
-    const li = document.createElement('li');
-    li.innerText = `#${e.EmployeeID} - ${e.FirstName} ${e.LastName} | ${e.Role} | ${e.Email}`;
-    ul.appendChild(li);
-  });
-}
-
-async function adminLoadOrders() {
-  const msg = document.getElementById('adminMsg');
-  msg.innerText = '';
-
-  const ul = document.getElementById('orderList');
-  ul.innerHTML = 'Yükleniyor...';
-
-  const res = await fetch('/api/admin/orders');
-  if (!res.ok) {
-    ul.innerHTML = '';
-    msg.innerText = await res.text();
-    return;
-  }
-
-  const data = await res.json();
-  ul.innerHTML = '';
-
-  data.forEach(o => {
-    const li = document.createElement('li');
-    li.innerText = `OrderID:${o.OrderID} | CustomerID:${o.CustomerID} | Status:${o.OrderStatus} | Total:${o.TotalAmount} | Date:${o.OrderDate}`;
-    ul.appendChild(li);
-  });
 }

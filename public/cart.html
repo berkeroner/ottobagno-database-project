@@ -2,31 +2,108 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Sepet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OttoBagno | Sepetim</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+      body { background-color: #f8f9fa; }
+      .cart-item-img { width: 80px; height: 80px; object-fit: contain; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; }
+  </style>
 </head>
 <body>
 
-  <h1>Sepet</h1>
-
-  <div style="margin-bottom:10px;">
-    <a href="index.html">← Kataloğa Dön</a> |
-    <a href="checkout.html">Ödeme Sayfası</a> |
-    <button onclick="logout()">Çıkış</button>
+<nav class="navbar navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="index.html">
+        <i class="fa-solid fa-layer-group"></i> OTTO BAGNO
+    </a>
+    <a href="index.html" class="btn btn-sm btn-outline-light">
+        <i class="fa-solid fa-arrow-left"></i> Alışverişe Dön
+    </a>
   </div>
+</nav>
 
-  <hr>
+<div class="container">
+  <div class="row g-4">
+    
+    <div class="col-lg-8">
+        <h4 class="mb-3 d-flex justify-content-between align-items-center">
+            <span>Sepetim</span>
+            <span class="badge bg-secondary rounded-pill" id="itemCountBadge">0 Ürün</span>
+        </h4>
+        
+        <div class="card shadow-sm border-0">
+            <ul id="cartList" class="list-group list-group-flush">
+                <li class="list-group-item text-center py-5 text-muted">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mb-0 mt-2">Sepet yükleniyor...</p>
+                </li>
+            </ul>
+        </div>
+    </div>
 
-  <h3>Sepetteki Ürünler</h3>
-  <ul id="cartList"></ul>
+    <div class="col-lg-4">
+        <h4 class="mb-3">Sipariş Özeti</h4>
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item d-flex justify-content-between lh-sm px-0">
+                        <div class="text-muted">Ara Toplam</div>
+                        <span class="text-muted">-</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between lh-sm px-0">
+                        <div class="text-muted">Kargo</div>
+                        <span class="text-success">Ücretsiz</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-3">
+                        <span class="fw-bold fs-5">Toplam (TL)</span>
+                        <strong class="fs-4 text-primary"><span id="cartTotal">0.00</span> ₺</strong>
+                    </li>
+                </ul>
 
-  <h3>Toplam: <span id="cartTotal">0</span></h3>
+                <div class="d-grid gap-2">
+                    <a href="checkout.html" id="btnCheckout" class="btn btn-primary btn-lg">
+                        Ödemeyi Tamamla <i class="fa-solid fa-chevron-right ms-2"></i>
+                    </a>
+                    
+                    <a href="index.html" class="btn btn-outline-secondary">
+                        Alışverişe Devam Et
+                    </a>
+                </div>
+                
+                <hr class="my-4">
+                
+                <button onclick="logout()" class="btn btn-link text-danger text-decoration-none w-100 text-center btn-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> Güvenli Çıkış
+                </button>
 
-  <button id="btnCheckout" type="button">Öde ve Tamamla</button>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4 text-muted small">
+            <i class="fa-solid fa-lock me-1"></i> Güvenli Ödeme Altyapısı<br>
+            <i class="fa-brands fa-cc-visa fa-lg mx-1"></i>
+            <i class="fa-brands fa-cc-mastercard fa-lg mx-1"></i>
+        </div>
+    </div>
 
-  <script src="app.js"></script>
-  <script>
-    initCartPage();
-  </script>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+
+<script>
+    // Sayfa Yükleme
+    // app.js içindeki initCartPage fonksiyonunu çalıştırır
+    if (typeof initCartPage === 'function') {
+        initCartPage();
+    }
+</script>
 
 </body>
 </html>
