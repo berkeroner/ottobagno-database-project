@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { sql, config } = require('../db');
 
-// Customer login (FirstName + LastName)
+// Customer login (FirstName + LastName) -> SP ile
 router.post('/login', async (req, res) => {
   const { firstName, lastName } = req.body;
 
@@ -16,14 +16,9 @@ router.post('/login', async (req, res) => {
     const r = await pool.request()
       .input('FirstName', sql.NVarChar(50), firstName.trim())
       .input('LastName', sql.NVarChar(50), lastName.trim())
-      .query(`
-        SELECT TOP 1 CustomerID, FirstName, LastName
-        FROM Customer
-        WHERE FirstName = @FirstName AND LastName = @LastName
-        ORDER BY CustomerID DESC
-      `);
+      .execute('sp_LoginCustomer');   // ✅ query yok
 
-    if (r.recordset.length === 0) {
+    if (!r.recordset || r.recordset.length === 0) {
       return res.status(404).send('Müşteri bulunamadı.');
     }
 

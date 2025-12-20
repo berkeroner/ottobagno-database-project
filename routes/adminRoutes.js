@@ -16,11 +16,11 @@ router.post('/products/add', async (req, res) => {
     await pool.request()
       .input('ProductCode', sql.NVarChar(20), productCode)
       .input('ProductName', sql.NVarChar(100), productName)
-      .input('SalesPrice', sql.Decimal(10,2), salesPrice)
+      .input('SalesPrice', sql.Decimal(10, 2), salesPrice)
       .input('Color', sql.NVarChar(30), color)
       .input('StockQuantity', sql.Int, stockQuantity)
-      .input('ClassID', sql.Int, classId)
-      .input('CollectionID', sql.Int, collectionId)
+      .input('ClassID', sql.Int, classId ?? null)
+      .input('CollectionID', sql.Int, collectionId ?? null)
       .execute('sp_AddProduct');
 
     res.json({ ok: true });
@@ -47,32 +47,22 @@ router.post('/products/delete', async (req, res) => {
   }
 });
 
-// ✅ Tüm çalışanlar
+// ✅ Tüm çalışanlar (SP: sp_ListEmployees)
 router.get('/employees', async (req, res) => {
   try {
     const pool = await sql.connect(config);
-    const r = await pool.request().query(`
-      SELECT EmployeeID, FirstName, LastName, Role, Email
-      FROM dbo.Employee
-      ORDER BY EmployeeID DESC
-    `);
+    const r = await pool.request().execute('sp_ListEmployees');
     res.json(r.recordset);
   } catch (e) {
     res.status(500).send(e.message);
   }
 });
 
-// ✅ Tüm siparişler
+// ✅ Tüm siparişler (SP: sp_ListAllSalesOrders)
 router.get('/orders', async (req, res) => {
   try {
     const pool = await sql.connect(config);
-    const r = await pool.request().query(`
-      SELECT TOP 200
-        OrderID, OrderDate, OrderStatus, TotalAmount, UsedCurrency,
-        CustomerID, SalesEmployeeID, CountryID
-      FROM dbo.SalesOrder
-      ORDER BY OrderID DESC
-    `);
+    const r = await pool.request().execute('sp_ListAllSalesOrders');
     res.json(r.recordset);
   } catch (e) {
     res.status(500).send(e.message);

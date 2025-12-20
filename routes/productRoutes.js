@@ -6,11 +6,7 @@ const { sql, config } = require('../db');
 router.get('/classes', async (req, res) => {
   try {
     const pool = await sql.connect(config);
-    const r = await pool.request().query(`
-      SELECT ClassID, ClassName
-      FROM ProductClass
-      ORDER BY ClassName
-    `);
+    const r = await pool.request().execute('sp_ListProductClasses');
     res.json(r.recordset);
   } catch (e) {
     res.status(500).send(e.message);
@@ -21,11 +17,7 @@ router.get('/classes', async (req, res) => {
 router.get('/collections', async (req, res) => {
   try {
     const pool = await sql.connect(config);
-    const r = await pool.request().query(`
-      SELECT CollectionID, CollectionName
-      FROM ProductCollection
-      ORDER BY CollectionName
-    `);
+    const r = await pool.request().execute('sp_ListProductCollections');
     res.json(r.recordset);
   } catch (e) {
     res.status(500).send(e.message);
@@ -40,18 +32,10 @@ router.get('/filtered', async (req, res) => {
   try {
     const pool = await sql.connect(config);
 
-    const request = pool.request();
-    request.input('ClassID', sql.Int, classId);
-    request.input('CollectionID', sql.Int, collectionId);
-
-    const r = await request.query(`
-      SELECT TOP (500)
-        ProductCode, ProductName, SalesPrice, StockQuantity, ClassID, CollectionID
-      FROM dbo.Product
-      WHERE (@ClassID IS NULL OR ClassID = @ClassID)
-        AND (@CollectionID IS NULL OR CollectionID = @CollectionID)
-      ORDER BY ProductName
-    `);
+    const r = await pool.request()
+      .input('ClassID', sql.Int, classId)
+      .input('CollectionID', sql.Int, collectionId)
+      .execute('sp_ListFilteredProducts');
 
     res.json(r.recordset);
   } catch (e) {

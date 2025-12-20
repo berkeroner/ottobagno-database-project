@@ -29,16 +29,15 @@ async function login() {
     return;
   }
 
-  // ✅ ADMIN KURALİ (admin/admin)
+  // ✅ ADMIN KURALİ (DB'ye gitmez)
   if (firstName.toLowerCase() === 'admin' && lastName.toLowerCase() === 'admin') {
-    // customer gibi saklıyoruz ki requireCustomerOrRedirect çalışsın
     const adminObj = { CustomerID: -1, FirstName: 'admin', LastName: 'admin' };
     localStorage.setItem('customer', JSON.stringify(adminObj));
     window.location.href = 'admin.html';
     return;
   }
 
-  // ✅ NORMAL CUSTOMER LOGIN (DB'den bul)
+  // ✅ NORMAL CUSTOMER LOGIN (SP ile)
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -54,6 +53,7 @@ async function login() {
   localStorage.setItem('customer', JSON.stringify(customer));
   window.location.href = 'index.html';
 }
+
 
 
 // ===================== CART STORAGE =====================

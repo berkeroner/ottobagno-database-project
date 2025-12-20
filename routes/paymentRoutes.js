@@ -31,7 +31,7 @@ router.post('/pay', async (req, res) => {
     // (Opsiyonel) ödeme sonrası order durumunu göstermek için çekelim
     const statusResult = await pool.request()
       .input('OrderID', sql.Int, parseInt(orderId))
-      .query('SELECT OrderID, OrderStatus, TotalAmount FROM SalesOrder WHERE OrderID = @OrderID');
+      .execute('sp_GetSalesOrderStatus');
 
     res.json({
       message: 'Ödeme kaydedildi.',

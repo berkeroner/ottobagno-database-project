@@ -41,7 +41,7 @@ router.post('/checkout-pay', async (req, res) => {
     try {
       /* 1️⃣ Random employee seç */
       const empResult = await new sql.Request(tx)
-        .query('SELECT TOP 1 EmployeeID FROM Employee ORDER BY NEWID()');
+        .execute('sp_GetRandomEmployee');
 
       const salesEmployeeId = empResult.recordset?.[0]?.EmployeeID;
       if (!salesEmployeeId) throw new Error('Employee bulunamadı.');
@@ -74,7 +74,7 @@ router.post('/checkout-pay', async (req, res) => {
       /* 5️⃣ TotalAmount çek */
       const totalRes = await new sql.Request(tx)
         .input('OrderID', sql.Int, newOrderId)
-        .query('SELECT TotalAmount FROM SalesOrder WHERE OrderID = @OrderID');
+        .execute('sp_GetOrderTotal');
 
       const totalAmount = totalRes.recordset[0].TotalAmount;
 

@@ -575,3 +575,110 @@ BEGIN
     END
 END
 GO
+
+CREATE PROCEDURE sp_ListEmployees
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT EmployeeID, FirstName, LastName, Role, Email
+  FROM Employee
+  ORDER BY EmployeeID;
+END
+GO
+
+CREATE PROCEDURE sp_ListAllSalesOrders
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT TOP 500
+    OrderID, OrderDate, OrderStatus, TotalAmount, UsedCurrency,
+    CustomerID, SalesEmployeeID, CountryID
+  FROM SalesOrder
+  ORDER BY OrderID;
+END
+GO
+
+CREATE PROCEDURE sp_LoginCustomer
+  @FirstName NVARCHAR(50),
+  @LastName NVARCHAR(50)
+AS
+BEGIN
+  SELECT TOP 1 CustomerID, FirstName, LastName,
+    CASE 
+      WHEN LOWER(FirstName) = 'admin' AND LOWER(LastName) = 'admin'
+      THEN 1 ELSE 0
+    END AS IsAdmin
+  FROM Customer
+  WHERE FirstName = @FirstName AND LastName = @LastName
+  ORDER BY CustomerID
+END
+GO
+
+CREATE PROCEDURE sp_ListProductClasses
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT ClassID, ClassName
+  FROM ProductClass
+  ORDER BY ClassName;
+END
+GO
+
+CREATE PROCEDURE sp_ListProductCollections
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT CollectionID, CollectionName
+  FROM ProductCollection
+  ORDER BY CollectionName;
+END
+GO
+
+CREATE PROCEDURE sp_ListFilteredProducts
+  @ClassID INT = NULL,
+  @CollectionID INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT TOP (500) ProductCode, ProductName, SalesPrice, StockQuantity,
+    ClassID, CollectionID
+  FROM Product
+  WHERE (@ClassID IS NULL OR ClassID = @ClassID)
+    AND (@CollectionID IS NULL OR CollectionID = @CollectionID)
+  ORDER BY ProductName;
+END
+GO
+
+CREATE PROCEDURE sp_GetSalesOrderStatus
+  @OrderID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT OrderID, OrderStatus, TotalAmount
+  FROM SalesOrder
+  WHERE OrderID = @OrderID;
+END
+GO
+
+CREATE PROCEDURE sp_GetRandomEmployee
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT TOP 1 EmployeeID FROM Employee ORDER BY NEWID();
+END
+GO
+
+CREATE PROCEDURE sp_GetOrderTotal
+  @OrderID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT TotalAmount FROM SalesOrder WHERE OrderID = @OrderID;
+END
+GO
