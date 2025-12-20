@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel</title>
+</head>
+<body>
+
+  <h1>Admin Panel</h1>
+
+  <div style="margin-bottom:10px;">
+    <a href="index.html">← Kataloğa Dön</a> |
+    <button onclick="logout()">Çıkış</button>
+  </div>
+
+  <p id="adminInfo"></p>
+  <p id="adminMsg" style="color:crimson;"></p>
+
+  <hr>
+
+  <h2>Ürün Ekle</h2>
+  <div>
+    Code: <input id="pCode"><br><br>
+    Name: <input id="pName"><br><br>
+    Price: <input id="pPrice" type="number"><br><br>
+    Color: <input id="pColor"><br><br>
+    Stock: <input id="pStock" type="number"><br><br>
+    ClassID (ops): <input id="pClass" type="number"><br><br>
+    CollectionID (ops): <input id="pColl" type="number"><br><br>
+    <button id="btnAddProduct" type="button">Ürün Ekle</button>
+  </div>
+
+  <hr>
+
+  <h2>Ürün Sil</h2>
+  ProductCode: <input id="delCode">
+  <button id="btnDeleteProduct" type="button">Sil</button>
+
+  <hr>
+
+  <h2>Tüm Çalışanlar</h2>
+  <button id="btnEmployees" type="button">Çalışanları Getir</button>
+  <ul id="empList"></ul>
+
+  <hr>
+
+  <h2>Tüm Siparişler</h2>
+  <button id="btnOrders" type="button">Siparişleri Getir</button>
+  <ul id="orderList"></ul>
+
+  <script src="app.js"></script>
+  <script>
+    // ✅ admin kontrol
+    const c = requireCustomerOrRedirect();
+    if (!(c.FirstName.toLowerCase() === 'admin' && c.LastName.toLowerCase() === 'admin')) {
+      alert('Admin değilsin!');
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('adminInfo').innerText = `Admin: ${c.FirstName} ${c.LastName}`;
+
+    // ✅ Butonları fonksiyonlara bağla (onclick yazmadan garanti)
+    document.getElementById('btnAddProduct').onclick = adminAddProduct;
+    document.getElementById('btnDeleteProduct').onclick = adminDeleteProduct;
+    document.getElementById('btnEmployees').onclick = adminLoadEmployees;
+    document.getElementById('btnOrders').onclick = adminLoadOrders;
+  </script>
+
+</body>
+</html>

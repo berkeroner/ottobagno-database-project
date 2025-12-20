@@ -1,0 +1,72 @@
+############################
+# Node.js
+############################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# Environment variables
+############################
+.env
+.env.*
+!.env.example
+
+############################
+# Logs
+############################
+logs/
+*.log
+
+############################
+# macOS system files
+############################
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon?
+Icon
+
+._*
+
+# Thumbnails
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+############################
+# Editor / IDE
+############################
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+############################
+# Build / cache
+############################
+dist/
+build/
+.cache/
+.npm/
+.eslintcache
+
+############################
+# Database backups / dumps
+############################
+*.bak
+*.db
+*.sqlite
+*.sqlite3
+*.sql~
+*.dump
+
+############################
+# Temporary files
+############################
+tmp/
+temp/

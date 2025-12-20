@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Siparişi Tamamla</title>
+</head>
+<body>
+
+  <h1>Siparişi Tamamla</h1>
+  <a href="cart.html">← Sepete Dön</a>
+
+  <hr>
+
+  <h3>Sipariş Bilgileri</h3>
+  <div>Müşteri: <b id="customerInfo">-</b></div>
+
+  <br>
+
+  <label>Currency (örn: TRY)</label><br>
+  <input id="usedCurrency" value="TRY" /><br><br>
+
+  <label>CountryID</label><br>
+  <input id="countryId" value="1" /><br><br>
+
+  <label>Payment Method</label><br>
+  <select id="paymentMethod">
+    <option value="CreditCard">CreditCard</option>
+    <option value="Cash">Cash</option>
+    <option value="BankTransfer">BankTransfer</option>
+  </select>
+
+  <br><br>
+
+  <button id="btnCheckoutPay" type="button">Öde ve Siparişi Oluştur</button>
+
+  <script src="app.js"></script>
+  <script>
+    initCheckoutPage();
+  </script>
+</body>
+</html>

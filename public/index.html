@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>OttoBagno | Ürünler</title>
+</head>
+<body>
+
+<h1>Ürünler</h1>
+
+<!-- Kullanıcı Bilgisi -->
+<div id="userBar">
+  Hoşgeldin: <span id="userName"></span>
+  | <a href="cart.html">Sepet (<span id="cartCount">0</span>)</a>
+  | <button onclick="logout()">Çıkış</button>
+</div>
+
+<hr>
+
+<!-- Admin alanı -->
+<div id="adminPanel" style="display:none;">
+  <b>Admin Paneli:</b>
+  <a href="admin.html">Admin Sayfası</a>
+  <hr>
+</div>
+
+<!-- Filtre -->
+<h3>Filtre</h3>
+
+<label>Class:</label>
+<select id="classSelect"></select>
+
+<label>Collection:</label>
+<select id="collectionSelect"></select>
+
+<button type="button" id="btnResetFilters">Filtreyi Sıfırla</button>
+
+<hr>
+
+<!-- Ürünler -->
+<h3>Ürün Listesi</h3>
+<ul id="products"></ul>
+
+<script src="app.js"></script>
+
+<script>
+  // 🔐 Login kontrol + sayfa init
+  (function () {
+    const customer = requireCustomerOrRedirect();
+
+    // Kullanıcı adı yaz
+    document.getElementById('userName').innerText =
+      `${customer.FirstName} ${customer.LastName} (ID: ${customer.CustomerID})`;
+
+    // Admin mi?
+    if (
+      customer.FirstName.toLowerCase() === 'admin' &&
+      customer.LastName.toLowerCase() === 'admin'
+    ) {
+      document.getElementById('adminPanel').style.display = 'block';
+    }
+
+    initCatalogPage();
+  })();
+</script>
+
+</body>
+</html>

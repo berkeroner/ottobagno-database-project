@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sepet</title>
+</head>
+<body>
+
+  <h1>Sepet</h1>
+
+  <div style="margin-bottom:10px;">
+    <a href="index.html">← Kataloğa Dön</a> |
+    <a href="checkout.html">Ödeme Sayfası</a> |
+    <button onclick="logout()">Çıkış</button>
+  </div>
+
+  <hr>
+
+  <h3>Sepetteki Ürünler</h3>
+  <ul id="cartList"></ul>
+
+  <h3>Toplam: <span id="cartTotal">0</span></h3>
+
+  <button id="btnCheckout" type="button">Öde ve Tamamla</button>
+
+  <script src="app.js"></script>
+  <script>
+    initCartPage();
+  </script>
+
+</body>
+</html>

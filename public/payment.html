@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>OttoBagno - Ödeme</title>
+</head>
+<body>
+  <h2>Ödeme Al</h2>
+
+  <a href="index.html">← Kataloğa Dön</a>
+
+  <hr>
+
+  OrderID: <input id="payOrderId" placeholder="örn: 101"><br>
+  Amount: <input id="payAmount" placeholder="örn: 5000"><br>
+
+  Payment Method:
+  <select id="payMethod">
+    <option value="CreditCard">CreditCard</option>
+    <option value="Cash">Cash</option>
+    <option value="BankTransfer">BankTransfer</option>
+  </select>
+
+  <br><br>
+  <button onclick="pay()">Ödemeyi Kaydet</button>
+
+  <p id="payResult"></p>
+
+  <script src="app.js"></script>
+  <script>
+    // İstersen checkout sonrası orderId'yi localStorage'a koyup buraya otomatik yazdırırız.
+  </script>
+</body>
+</html>
