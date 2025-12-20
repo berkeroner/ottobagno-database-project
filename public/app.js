@@ -542,3 +542,104 @@ async function checkoutAndPay() {
         btn.innerHTML = oldText;
     }
 }
+// ===================== SAYFA: SİPARİŞLERİM (MY ORDERS) =====================
+
+async function initMyOrdersPage() {
+    const customer = requireCustomerOrRedirect();
+    if (!customer) return;
+
+    const tbody = document.getElementById('myOrdersList');
+    const noMsg = document.getElementById('noOrdersMsg');
+    
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" class="py-4"><div class="spinner-border text-primary"></div></td></tr>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/orders/my-orders?customerId=${customer.CustomerID}`);
+        
+        if (!res.ok) throw new Error("Siparişler yüklenemedi.");
+        
+        const orders = await res.json();
+        tbody.innerHTML = '';
+
+        if (orders.length === 0) {
+            noMsg.classList.remove('d-none');
+            return;
+        }
+
+        orders.forEach(o => {
+            // Tarih Formatı
+            const dateStr = new Date(o.OrderDate).toLocaleDateString('tr-TR', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit'
+            });
+
+            // Durum Rengi (Bootstrap Badge)
+            let badgeClass = 'bg-secondary';
+            if (o.OrderStatus === 'New') badgeClass = 'bg-primary';
+            else if (o.OrderStatus === 'Paid') badgeClass = 'bg-success';
+            else if (o.OrderStatus === 'Shipped') badgeClass = 'bg-info text-dark';
+            else if (o.OrderStatus === 'Cancelled') badgeClass = 'bg-danger';
+
+            const html = `
+            <tr>
+                <td class="fw-bold">#${o.OrderID}</td>
+                <td>${dateStr}</td>
+                <td class="fw-bold text-dark">${o.TotalAmount.toFixed(2)} ${o.UsedCurrency || 'TRY'}</td>
+                <td><span class="badge ${badgeClass} px-3 py-2 rounded-pill">${o.OrderStatus}</span></td>
+                <td>
+    <button class="btn btn-sm btn-outline-primary" onclick="showOrderDetails(${o.OrderID})">
+        <i class="fa-solid fa-list-ul"></i> İncele
+    </button>
+</td>
+            </tr>`;
+            tbody.innerHTML += html;
+        });
+
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-3">${err.message}</td></tr>`;
+    }
+}
+// ===================== SİPARİŞ DETAYI GÖSTER =====================
+async function showOrderDetails(orderId) {
+    // 1. Modalı seç ve başlığı ayarla
+    const modalEl = document.getElementById('orderDetailModal');
+    const modalTitle = document.getElementById('detailModalTitle');
+    const modalBody = document.getElementById('modalBodyContent');
+    
+    // Bootstrap Modal nesnesi oluştur
+    const modal = new bootstrap.Modal(modalEl);
+    
+    // Yükleniyor... göster ve modalı aç
+    modalTitle.innerText = `Sipariş Detayı #${orderId}`;
+    modalBody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
+    modal.show();
+
+    try {
+        // 2. API'den veriyi çek
+        const res = await fetch(`${API_BASE}/api/orders/details/${orderId}`);
+        const items = await res.json();
+
+        modalBody.innerHTML = '';
+
+        if (items.length === 0) {
+            modalBody.innerHTML = '<tr><td colspan="5">Detay bulunamadı.</td></tr>';
+            return;
+        }
+
+        // 3. Tabloyu doldur
+        items.forEach(it => {
+            modalBody.innerHTML += `
+            <tr>
+                <td>${it.ProductCode}</td>
+                <td class="fw-bold">${it.ProductName}</td>
+                <td>${it.Quantity}</td>
+                <td>${it.UnitPrice.toFixed(2)} ₺</td>
+                <td class="fw-bold text-primary">${it.LineTotal.toFixed(2)} ₺</td>
+            </tr>`;
+        });
+
+    } catch (e) {
+        modalBody.innerHTML = `<tr><td colspan="5" class="text-danger">Hata: ${e.message}</td></tr>`;
+    }
+}

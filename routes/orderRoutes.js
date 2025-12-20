@@ -110,6 +110,44 @@ router.post('/checkout-pay', async (req, res) => {
   }
 });
 
+// ... Mevcut kodların arasına ekle ...
+
+// Müşterinin kendi siparişlerini getir
+router.get('/my-orders', async (req, res) => {
+    const { customerId } = req.query;
+
+    if (!customerId) {
+        return res.status(400).send('CustomerID gerekli.');
+    }
+
+    try {
+        const pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('CustomerID', sql.Int, customerId)
+            .execute('sp_GetCustomerOrders');
+
+        res.json(result.recordset);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Siparişler getirilemedi: ' + err.message);
+    }
+});
+// Sipariş detaylarını getir
+router.get('/details/:orderId', async (req, res) => {
+    const { orderId } = req.params;
+
+    try {
+        const pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('OrderID', sql.Int, orderId)
+            .execute('sp_GetOrderDetails');
+
+        res.json(result.recordset);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Detaylar getirilemedi.');
+    }
+});
 /* -------------------------------------------------- */
 
 module.exports = router;

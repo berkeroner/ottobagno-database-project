@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OttoBagno | Siparişlerim</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style> body { background-color: #f4f6f9; } </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="index.html"><i class="fa-solid fa-layer-group"></i> OTTO BAGNO</a>
+    <a href="index.html" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Alışverişe Dön</a>
+  </div>
+</nav>
+
+<div class="container">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0"><i class="fa-solid fa-box-open"></i> Sipariş Geçmişim</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Tarih</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                            <th>Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myOrdersList">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="noOrdersMsg" class="text-center py-5 d-none">
+                <i class="fa-solid fa-cart-arrow-down fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Henüz hiç siparişiniz yok.</p>
+                <a href="index.html" class="btn btn-primary btn-sm">Alışverişe Başla</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title" id="detailModalTitle">Sipariş Detayı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+            <table class="table table-bordered text-center">
+                <thead class="table-secondary">
+                    <tr>
+                        <th>Ürün Kodu</th>
+                        <th>Ürün Adı</th>
+                        <th>Adet</th>
+                        <th>Birim Fiyat</th>
+                        <th>Toplam</th>
+                    </tr>
+                </thead>
+                <tbody id="modalBodyContent">
+                    </tbody>
+            </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+<script>
+    // Sayfa açılınca çalıştır
+    initMyOrdersPage();
+</script>
+
+</body>
+</html>
