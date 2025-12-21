@@ -207,22 +207,25 @@ BEGIN
 END
 GO
 
-
-CREATE PROCEDURE sp_ListProducts
-    @Search NVARCHAR(100) = NULL
+CREATE OR ALTER PROCEDURE dbo.sp_ListProducts
+  @Search NVARCHAR(100) = NULL,
+  @IncludeInactive BIT = 0
 AS
 BEGIN
-    SET NOCOUNT ON;
+  SET NOCOUNT ON;
 
-    SELECT TOP (500)
-        p.ProductCode, p.ProductName, p.SalesPrice, p.SalesPriceWithVAT, p.Color,
-        p.StockQuantity, p.ClassID, p.CollectionID
-    FROM Product p
-    WHERE @Search IS NULL
-       OR p.ProductCode LIKE '%' + @Search + '%'
-       OR p.ProductName LIKE '%' + @Search + '%'
-       OR p.Color       LIKE '%' + @Search + '%'
-    ORDER BY p.ProductName;
+  SELECT TOP (500)
+    p.ProductCode, p.ProductName, p.SalesPrice, p.SalesPriceWithVAT, p.Color,
+    p.StockQuantity, p.ClassID, p.CollectionID, p.IsActive
+  FROM dbo.Product p
+  WHERE (@IncludeInactive = 1 OR p.IsActive = 1)
+    AND (
+      @Search IS NULL
+      OR p.ProductCode LIKE '%' + @Search + '%'
+      OR p.ProductName LIKE '%' + @Search + '%'
+      OR p.Color       LIKE '%' + @Search + '%'
+    )
+  ORDER BY p.ProductCode;
 END
 GO
 
@@ -556,25 +559,21 @@ END
 GO
 
 
-CREATE PROCEDURE sp_DeleteProductFromSales
-    @ProductCode NVARCHAR(20)
+CREATE OR ALTER PROCEDURE dbo.sp_DeleteProductFromSales
+  @ProductCode NVARCHAR(20)
 AS
 BEGIN
-    SET NOCOUNT ON;
+  SET NOCOUNT ON;
 
-    BEGIN
-        BEGIN TRANSACTION;
+  IF NOT EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode)
+    THROW 50170, 'Product not found.', 1;
 
-        IF NOT EXISTS (SELECT 1 FROM Product WHERE ProductCode = @ProductCode)
-            THROW 50170, 'Product not found.', 1;
-
-        DELETE FROM Product
-        WHERE ProductCode = @ProductCode;
-
-        COMMIT TRANSACTION;
-    END
+  UPDATE dbo.Product
+  SET IsActive = 0
+  WHERE ProductCode = @ProductCode;
 END
 GO
+
 
 CREATE PROCEDURE sp_ListEmployees
 AS
@@ -583,6 +582,7 @@ BEGIN
 
   SELECT EmployeeID, FirstName, LastName, Role, Email
   FROM Employee
+  WHERE IsActive = 1
   ORDER BY EmployeeID;
 END
 GO
@@ -638,7 +638,7 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE sp_ListFilteredProducts
+CREATE OR ALTER PROCEDURE sp_ListFilteredProducts
   @ClassID INT = NULL,
   @CollectionID INT = NULL
 AS
@@ -647,10 +647,10 @@ BEGIN
 
   SELECT TOP (500) ProductCode, ProductName, SalesPrice, StockQuantity,
     ClassID, CollectionID
-  FROM Product
-  WHERE (@ClassID IS NULL OR ClassID = @ClassID)
+  FROM Product p
+  WHERE IsActive = 1 AND (@ClassID IS NULL OR ClassID = @ClassID)
     AND (@CollectionID IS NULL OR CollectionID = @CollectionID)
-  ORDER BY ProductName;
+  ORDER BY p.ProductCode;
 END
 GO
 
@@ -680,5 +680,109 @@ AS
 BEGIN
   SET NOCOUNT ON;
   SELECT TotalAmount FROM SalesOrder WHERE OrderID = @OrderID;
+END
+GO
+
+CREATE PROCEDURE sp_AddEmployee
+  @FirstName NVARCHAR(50),
+  @LastName NVARCHAR(50),
+  @Role NVARCHAR(50),
+  @PhoneNumber NVARCHAR(20),
+  @Email NVARCHAR(250)
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF EXISTS (SELECT 1 FROM Employee WHERE Email = @Email)
+    THROW 50200, 'Employee email already exists.', 1;
+
+  INSERT INTO Employee (FirstName, LastName, Role, PhoneNumber, Email)
+  VALUES (@FirstName, @LastName, @Role, @PhoneNumber, @Email);
+END
+GO
+
+CREATE PROCEDURE sp_DeleteEmployee
+  @EmployeeID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID=@EmployeeID)
+    THROW 50201, 'Employee not found.', 1;
+
+  DELETE FROM Employee WHERE EmployeeID=@EmployeeID;
+END
+GO
+
+CREATE PROCEDURE sp_ListPurchaseOrders
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT TOP (500)
+    PurchaseOrderID, OrderDate, OrderStatus, TotalAmount, SupplierID, ResponsibleEmployeeID
+  FROM PurchaseOrder
+  ORDER BY PurchaseOrderID DESC;
+END
+GO
+
+CREATE PROCEDURE sp_RecalculatePurchaseOrderTotal
+  @PurchaseOrderID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM PurchaseOrder WHERE PurchaseOrderID=@PurchaseOrderID)
+    THROW 50210, 'Purchase order not found.', 1;
+
+  UPDATE PurchaseOrder
+  SET TotalAmount = ISNULL((
+    SELECT SUM(LineTotal)
+    FROM PurchaseOrderDetail
+    WHERE PurchaseOrderID = @PurchaseOrderID
+  ), 0)
+  WHERE PurchaseOrderID = @PurchaseOrderID;
+END
+GO
+
+CREATE PROCEDURE sp_AddPurchaseOrderDetailAndRecalc
+  @PurchaseOrderID INT,
+  @MaterialID INT,
+  @Quantity INT,
+  @UnitPrice DECIMAL(10,2)
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  BEGIN TRANSACTION;
+
+  IF @Quantity <= 0 OR @UnitPrice < 0
+    THROW 50211, 'Invalid quantity or unit price.', 1;
+
+  IF NOT EXISTS (SELECT 1 FROM PurchaseOrder WHERE PurchaseOrderID=@PurchaseOrderID)
+    THROW 50212, 'Purchase order not found.', 1;
+
+  IF NOT EXISTS (SELECT 1 FROM RawMaterial WHERE MaterialID=@MaterialID)
+    THROW 50213, 'Material not found.', 1;
+
+  INSERT INTO PurchaseOrderDetail (PurchaseOrderID, MaterialID, QuantityOrdered, UnitPrice)
+  VALUES (@PurchaseOrderID, @MaterialID, @Quantity, @UnitPrice);
+
+  EXEC sp_RecalculatePurchaseOrderTotal @PurchaseOrderID;
+
+  COMMIT TRANSACTION;
+END
+GO
+
+CREATE PROCEDURE sp_DeactivateEmployee
+  @EmployeeID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID=@EmployeeID)
+    THROW 50201, 'Employee not found.', 1;
+
+  UPDATE Employee SET IsActive = 0 WHERE EmployeeID=@EmployeeID;
 END
 GO

@@ -14,5 +14,16 @@
   "dependencies": {
     "express": "^5.2.1",
     "mssql": "^12.2.0"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/berkeroner/ottobagno-database-project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/berkeroner/ottobagno-database-project/issues"
+  },
+  "homepage": "https://github.com/berkeroner/ottobagno-database-project#readme"
 }
