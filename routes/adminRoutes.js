@@ -177,4 +177,95 @@ router.get('/products', async (req, res) => {
   }
 });
 
+// ... Diğer rotaların altına ekle ...
 
+// 1. Bir ürünün reçetesini getir (Frontend'de göstermek için)
+router.get('/production/bom/:productCode', async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        const r = await pool.request()
+            .input('ProductCode', sql.NVarChar(20), req.params.productCode)
+            .execute('sp_GetProductBOM');
+        res.json(r.recordset);
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+// 2. Üretimi Gerçekleştir
+router.post('/production/produce', async (req, res) => {
+    const { productCode, quantity } = req.body;
+    
+    if (!productCode || !quantity || quantity <= 0) {
+        return res.status(400).send("Geçersiz veri.");
+    }
+
+    try {
+        const pool = await sql.connect(config);
+        await pool.request()
+            .input('ProductCode', sql.NVarChar(20), productCode)
+            .input('ProductionQty', sql.Int, quantity)
+            .execute('sp_ExecuteProduction'); // SQL prosedürünü çağır
+
+        res.json({ ok: true, message: "Üretim başarıyla tamamlandı, stoklar güncellendi." });
+    } catch (e) {
+        // SQL'den gelen "Yetersiz Hammadde" hatasını burası yakalar
+        res.status(400).send(e.message); 
+    }
+});
+// routes/adminRoutes.js içine ekle:
+
+// 1. Tedarikçileri Listele
+router.get('/suppliers', async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        const r = await pool.request().query('SELECT SupplierID, CompanyName FROM Supplier');
+        res.json(r.recordset);
+    } catch (e) { res.status(500).send(e.message); }
+});
+
+// 2. Hammaddeleri Listele
+router.get('/raw-materials', async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        const r = await pool.request().query('SELECT MaterialID, MaterialName, StockQuantity, Unit FROM RawMaterial');
+        res.json(r.recordset);
+    } catch (e) { res.status(500).send(e.message); }
+});
+
+// 3. Ürünleri Listele (Üretim sekmesi için)
+// Zaten /products rotan varsa onu kullanırız, yoksa bunu ekle:
+router.get('/products-simple', async (req, res) => {
+    try {
+        const pool = await sql.connect(config);
+        const r = await pool.request().query('SELECT ProductCode, ProductName, StockQuantity FROM Product');
+        res.json(r.recordset);
+    } catch (e) { res.status(500).send(e.message); }
+});
+// adminRoutes.js dosyasının içine ekle:
+
+// ✅ Hammadde Siparişi (Tarihli ve Otomatik Fiyatlı Yeni Versiyon)
+router.post('/purchase', async (req, res) => {
+    const { supplierId, employeeId, materialId, quantity, expectedDate } = req.body;
+
+    // Veri kontrolü
+    if (!supplierId || !materialId || !quantity || !expectedDate) {
+        return res.status(400).send("Eksik bilgi: Tedarikçi, Hammadde, Miktar veya Tarih yok.");
+    }
+
+    try {
+        const pool = await sql.connect(config);
+        await pool.request()
+            .input('SupplierID', sql.Int, supplierId)
+            .input('EmployeeID', sql.Int, employeeId || 1) // Admin ID yoksa 1 varsay
+            .input('MaterialID', sql.Int, materialId)
+            .input('Quantity', sql.Int, quantity)
+            .input('ExpectedDate', sql.Date, expectedDate)
+            .execute('sp_CreatePurchaseOrder'); // SQL Prosedürünü çağır
+        
+        res.json({ message: 'Sipariş başarıyla verildi.' });
+    } catch (e) {
+        console.error("Sipariş Hatası:", e);
+        res.status(500).send('Sunucu Hatası: ' + e.message);
+    }
+});

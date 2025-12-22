@@ -248,45 +248,217 @@ async function loadFilteredProducts() {
 
 // ===================== SAYFA: ADMIN PANEL =====================
 
+// ===================== SAYFA: ADMIN PANEL =====================
+
+// ===================== SAYFA: ADMIN PANEL =====================
+
 function initAdminPage() {
   const c = requireCustomerOrRedirect();
   if (!c) return;
 
-  // Admin Değilse At
+  // Admin Değilse Ana Sayfaya Gönder
   if (c.FirstName !== 'System' && c.LastName !== 'Admin') {
     alert("Yetkisiz Giriş!");
     window.location.href = 'index.html';
     return;
   }
 
-  document.getElementById('adminInfo').innerText = `Admin: ${c.FirstName} ${c.LastName}`;
+  // Admin Bilgisini Yaz
+  const infoEl = document.getElementById('adminInfo');
+  if (infoEl) infoEl.innerText = `Admin: ${c.FirstName} ${c.LastName}`;
 
-  // Ürün
-  document.getElementById('btnAddProduct').onclick = adminAddProduct;
-  document.getElementById('btnDeleteProduct').onclick = adminDeleteProduct;
+  // ===================== EVENT TANIMLAMALARI =====================
 
-  // Sipariş / personel mevcut
-  document.getElementById('btnEmployees').onclick = adminLoadEmployees;
-  document.getElementById('btnOrders').onclick = adminLoadOrders;
+  // --- Ürün Yönetimi ---
+  document.getElementById('btnAddProduct')?.addEventListener('click', adminAddProduct);
+  document.getElementById('btnDeleteProduct')?.addEventListener('click', adminDeleteProduct);
+  document.getElementById('btnProducts')?.addEventListener('click', () => adminLoadProducts());
+  
+  const searchInput = document.getElementById('productSearch');
+  if (searchInput) {
+      searchInput.onkeydown = (e) => {
+        if (e.key === 'Enter') adminLoadProducts(e.target.value);
+      };
+  }
 
-  // ✅ yeni
-  document.getElementById('btnAllOrders').onclick = adminLoadAllOrders;
-  document.getElementById('btnCreatePurchaseOrder').onclick = adminCreatePurchaseOrder;
-  document.getElementById('btnPurchaseList').onclick = adminLoadPurchaseOrders;
+  // --- Sipariş Yönetimi ---
+  document.getElementById('btnOrders')?.addEventListener('click', adminLoadOrders);
+  document.getElementById('btnAllOrders')?.addEventListener('click', adminLoadAllOrders);
 
-  document.getElementById('btnEmpAdd').onclick = adminAddEmployee;
-  document.getElementById('btnEmpDelete').onclick = adminDeleteEmployee;
+  // --- Çalışan Yönetimi ---
+  document.getElementById('btnEmployees')?.addEventListener('click', adminLoadEmployees);
+  document.getElementById('btnEmpAdd')?.addEventListener('click', adminAddEmployee);
+  document.getElementById('btnEmpDelete')?.addEventListener('click', adminDeleteEmployee);
 
-  document.getElementById('btnProducts').onclick = () => adminLoadProducts();
-  document.getElementById('productSearch').onkeydown = (e) => {
-    if (e.key === 'Enter') adminLoadProducts(e.target.value);
-};
+  // --- Hammadde (Satın Alma) ---
+  document.getElementById('btnPurchaseList')?.addEventListener('click', adminLoadPurchaseOrders);
+  
+  // Sipariş verme butonu
+  const btnPurchase = document.getElementById('btnPurchaseSubmit') || document.getElementById('btnCreatePurchaseOrder');
+  btnPurchase?.addEventListener('click', (e) => {
+      e.preventDefault(); 
+      adminCreatePurchaseOrder();
+  });
 
-  // İlk açılışta veri çekmek istersen:
-  // adminLoadOrders();
-  // adminLoadEmployees();
-  // adminLoadPurchaseOrders();
+  // Hammadde sekmesi açılınca dropdownları doldur
+  document.getElementById('purchase-tab')?.addEventListener('shown.bs.tab', loadPurchaseDropdowns);
+
+  // --- Üretim (Production) ---
+  document.getElementById('btnExecuteProduction')?.addEventListener('click', adminExecuteProduction);
+  document.getElementById('prodSelectProduct')?.addEventListener('change', adminLoadBOM);
+
+  // Üretim sekmesi açılınca ürünleri doldur
+  document.getElementById('production-tab')?.addEventListener('shown.bs.tab', loadProductionDropdown);
+
+  // Sayfa ilk açıldığında dropdownları sessizce yükle
+  loadPurchaseDropdowns();
+  loadProductionDropdown();
+} 
+//initAdminPage BURADA BİTTİ.
+
+// ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
+
+// 1. Hammadde Sekmesi İçin
+async function loadPurchaseDropdowns() {
+    try {
+        // Tedarikçiler
+        const resSup = await fetch(`${API_BASE}/api/admin/suppliers`);
+        const suppliers = await resSup.json();
+        const supSelect = document.getElementById('supplierSelect');
+        
+        if (supSelect) {
+            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            suppliers.forEach(s => {
+                supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
+            });
+        }
+
+        // Hammaddeler
+        const resMat = await fetch(`${API_BASE}/api/admin/raw-materials`);
+        const materials = await resMat.json();
+        const matSelect = document.getElementById('materialSelect');
+
+        if (matSelect) {
+            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            materials.forEach(m => {
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+            });
+        }
+    } catch (e) {
+        console.error("Dropdown hatası:", e);
+    }
 }
+
+// 2. Üretim Sekmesi İçin
+// app.js içinde bul ve değiştir:
+
+// app.js içinde bul ve değiştir:
+
+async function loadProductionDropdown() {
+    const prodSelect = document.getElementById('prodSelectProduct');
+    
+    // KONTROL: Eğer zaten seçenekler yüklenmişse (1'den fazla seçenek varsa) tekrar yükleme yapma!
+    if (prodSelect && prodSelect.options.length > 1) {
+        console.log("Ürün listesi zaten yüklü, pas geçiliyor.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/products`); 
+        const products = await res.json();
+
+        if (prodSelect) {
+            // Önce temizle
+            prodSelect.innerHTML = '<option value="">Ürün Seçiniz...</option>';
+            
+            products.forEach(p => {
+                // Kod ve İsim verisini garantiye al
+                const code = p.ProductCode || p.productCode; 
+                const name = p.ProductName || p.productName;
+                const stock = p.StockQuantity ?? p.stockQuantity;
+
+                if (code) {
+                    prodSelect.innerHTML += `<option value="${code}">${code} - ${name} (Stok: ${stock})</option>`;
+                }
+            });
+            console.log("Ürün listesi başarıyla yüklendi.");
+        }
+    } catch (e) {
+        console.error("Ürün yükleme hatası:", e);
+    }
+}
+// ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
+
+// 1. Hammadde Sekmesi İçin
+async function loadPurchaseDropdowns() {
+    try {
+        // Tedarikçiler
+        const resSup = await fetch(`${API_BASE}/api/admin/suppliers`);
+        const suppliers = await resSup.json();
+        const supSelect = document.getElementById('supplierSelect');
+        
+        if (supSelect) {
+            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            suppliers.forEach(s => {
+                supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
+            });
+        }
+
+        // Hammaddeler
+        const resMat = await fetch(`${API_BASE}/api/admin/raw-materials`);
+        const materials = await resMat.json();
+        const matSelect = document.getElementById('materialSelect');
+
+        if (matSelect) {
+            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            materials.forEach(m => {
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+            });
+        }
+    } catch (e) {
+        console.error("Dropdown hatası:", e);
+    }
+}
+
+
+// ===================== DİĞER ADMIN FONKSİYONLARI (Aynen Kalabilir) =====================
+// (adminAddProduct, adminDeleteProduct, adminExecuteProduction vb. buranın altında kalmalı)
+// app.js içinde initAdminPage fonksiyonunun en altına şunları ekle:
+
+// ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
+
+// 1. Hammadde Sekmesi Açılınca Tedarikçi ve Malzemeleri Getir
+async function loadPurchaseDropdowns() {
+    try {
+        // Tedarikçiler
+        const resSup = await fetch(`${API_BASE}/api/admin/suppliers`);
+        const suppliers = await resSup.json();
+        const supSelect = document.getElementById('supplierSelect');
+        
+        if (supSelect) {
+            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            suppliers.forEach(s => {
+                supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
+            });
+        }
+
+        // Hammaddeler
+        const resMat = await fetch(`${API_BASE}/api/admin/raw-materials`);
+        const materials = await resMat.json();
+        const matSelect = document.getElementById('materialSelect');
+
+        if (matSelect) {
+            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            materials.forEach(m => {
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+            });
+        }
+    } catch (e) {
+        console.error("Dropdown hatası:", e);
+    }
+}
+
+// 2. Üretim Sekmesi Açılınca Ürünleri Getir
 
 async function adminAddProduct() {
   const body = {
@@ -493,51 +665,88 @@ async function adminDeleteEmployee() {
 }
 
 // ✅ Hammadde siparişi oluştur
+// app.js dosyasında adminCreatePurchaseOrder fonksiyonunu bul ve bununla değiştir:
+
 async function adminCreatePurchaseOrder() {
-  const supplierId = Number(document.getElementById('poSupplierId').value);
-  const employeeId = Number(document.getElementById('poEmployeeId').value);
-  const materialId = Number(document.getElementById('poMaterialId').value);
-  const quantity = Number(document.getElementById('poQty').value);
-  const unitPrice = Number(document.getElementById('poUnitPrice').value);
+  // 1. HTML'deki Doğru ID'leri Bulmaya Çalışalım
+  // (Hem yeni hem eski ID'leri kontrol ediyoruz ki hata vermesin)
+  const supplierEl = document.getElementById('supplierSelect') || document.getElementById('poSupplierId');
+  const materialEl = document.getElementById('materialSelect') || document.getElementById('poMaterialId');
+  const qtyEl = document.getElementById('pchQty') || document.getElementById('poQty');
+  const dateEl = document.getElementById('pchDate') || document.getElementById('poDate'); // Tarih alanı
 
-  const msg = document.getElementById('poMsg');
-  msg.className = 'mt-3 fw-bold';
-  msg.innerText = '';
+  // 2. Eğer elementlerden biri sayfada yoksa hata vermeden dur.
+  if (!supplierEl || !materialEl || !qtyEl || !dateEl) {
+      alert("Hata: Form elemanları sayfada bulunamadı. (ID Uyuşmazlığı)");
+      console.error("Bulunamayan Elementler:", { supplierEl, materialEl, qtyEl, dateEl });
+      return;
+  }
 
-  if (!supplierId || !employeeId || !materialId || !quantity || !unitPrice) {
-    msg.classList.add('text-danger');
-    msg.innerText = 'Eksik alan var.';
+  // 3. Değerleri Al
+  const supplierId = supplierEl.value;
+  const materialId = materialEl.value;
+  const quantity = qtyEl.value;
+  const expectedDate = dateEl.value;
+
+  // 4. Boş Alan Kontrolü
+  if (!supplierId || !materialId || !quantity || !expectedDate) {
+    alert('Lütfen Tedarikçi, Hammadde, Miktar ve Tarih alanlarını doldurunuz.');
     return;
   }
 
+  // 5. Admin (Employee) Bilgisini Al
+  const currentUser = JSON.parse(localStorage.getItem('customer')) || { EmployeeID: 1 };
+  // Eğer giriş yapan kişi Admin değilse varsayılan 1 (System Admin) kullan
+  const empId = (currentUser.CustomerID === -1 || !currentUser.CustomerID) ? 1 : currentUser.CustomerID;
+
   const body = {
-    supplierId,
-    employeeId,
-    items: [{ materialId, quantity, unitPrice }]
+    supplierId: parseInt(supplierId),
+    employeeId: 1, // Sistem Admin ID'si (Garanti olsun diye 1 gönderiyoruz)
+    materialId: parseInt(materialId),
+    quantity: parseInt(quantity),
+    expectedDate: expectedDate
   };
 
+  const btn = document.getElementById('btnPurchaseSubmit') || document.getElementById('btnCreatePurchaseOrder');
+  const oldText = btn ? btn.innerHTML : "Kaydet";
+  
+  if(btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/api/admin/purchase-orders/create`, {
+    // Backend rotasına dikkat: /api/admin/purchase (Tarihli ve Fiyatsız olan yeni rota)
+    const res = await fetch(`${API_BASE}/api/admin/purchase`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
     const txt = await res.text();
+    
     if (!res.ok) {
-      msg.classList.add('text-danger');
-      msg.innerText = '❌ Hata: ' + txt;
-      return;
+      alert('❌ Sunucu Hatası: ' + txt);
+    } else {
+      alert('✅ Sipariş başarıyla verildi! Stoklar güncellendi.');
+      
+      // Formu temizle
+      supplierEl.value = "";
+      materialEl.value = "";
+      qtyEl.value = "";
+      dateEl.value = "";
+
+      // Listeyi güncelle
+      if(typeof adminLoadPurchaseOrders === 'function') adminLoadPurchaseOrders();
+      if(typeof loadPurchaseDropdowns === 'function') loadPurchaseDropdowns();
     }
-
-    const data = JSON.parse(txt);
-    msg.classList.add('text-success');
-    msg.innerText = `✅ Oluşturuldu. PurchaseOrderID: ${data.purchaseOrderId}`;
-
-    adminLoadPurchaseOrders();
   } catch (e) {
-    msg.classList.add('text-danger');
-    msg.innerText = '❌ ' + e.message;
+    alert('❌ Bağlantı Hatası: ' + e.message);
+  } finally {
+      if(btn) {
+          btn.disabled = false;
+          btn.innerHTML = oldText;
+      }
   }
 }
 
@@ -914,4 +1123,158 @@ async function adminQuickDeleteProduct(code) {
   } catch (e) {
     alert(e.message);
   }
+}
+// ===================== ÜRETİM (PRODUCTION) FONKSİYONLARI =====================
+
+// Ürünleri Dropdown'a doldur
+async function adminLoadProductsForProduction() {
+    const select = document.getElementById('prodSelectProduct');
+    if(select.options.length > 1) return; // Zaten doluysa tekrar çekme
+
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/products`); // Var olan ürün endpointini kullanıyoruz
+        const data = await res.json();
+        
+        select.innerHTML = '<option value="">Seçiniz...</option>';
+        data.forEach(p => {
+            // Sadece reçetesi olanları getirmek daha iyi olurdu ama şimdilik hepsini getiriyoruz
+            select.innerHTML += `<option value="${p.ProductCode}">${p.ProductCode} - ${p.ProductName} (Stok: ${p.StockQuantity})</option>`;
+        });
+    } catch (e) {
+        console.error("Ürünler yüklenemedi", e);
+    }
+}
+
+// Seçilen ürünün reçetesini getir ve göster
+// app.js içinde bul ve değiştir:
+
+async function adminLoadBOM() {
+    const selectEl = document.getElementById('prodSelectProduct');
+    const productCode = selectEl.value;
+    
+    // 🔥 KRİTİK HAMLE: Seçilen kodu tarayıcı hafızasına kazıyoruz.
+    // Dropdown sıfırlansa bile bu değişken burada kalır.
+    if (productCode) {
+        window.SELECTED_PROD_CODE = productCode;
+        console.log("Seçim Hafızaya Alındı:", window.SELECTED_PROD_CODE);
+    }
+
+    const list = document.getElementById('bomList');
+    const infoBox = document.getElementById('bomInfo');
+    
+    if (list) list.innerHTML = '';
+    
+    if (!productCode) {
+        if(infoBox) infoBox.classList.add('d-none');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/production/bom/${productCode}`);
+        const bomData = await res.json();
+
+        if (bomData.length === 0) {
+            if(infoBox) {
+                infoBox.classList.remove('d-none');
+                infoBox.className = 'alert alert-warning';
+            }
+            if(list) list.innerHTML = '<li>Bu ürün için reçete tanımlanmamış. Üretim yapılamaz.</li>';
+            
+            // Reçete yoksa butonu kapat
+            const btnExec = document.getElementById('btnExecuteProduction');
+            if(btnExec) btnExec.disabled = true;
+            return;
+        }
+
+        if(infoBox) {
+            infoBox.className = 'alert alert-info';
+            infoBox.classList.remove('d-none');
+        }
+        
+        // Reçete varsa butonu aç
+        const btnExec = document.getElementById('btnExecuteProduction');
+        if(btnExec) btnExec.disabled = false;
+
+        bomData.forEach(item => {
+            let stockStatus = `<span class="text-success">(${item.CurrentStock} ${item.Unit} var)</span>`;
+            if (item.CurrentStock < item.NeededPerUnit) {
+                stockStatus = `<span class="text-danger fw-bold">(YETERSİZ! ${item.CurrentStock} ${item.Unit} var)</span>`;
+            }
+            if(list) {
+                list.innerHTML += `<li><b>${item.MaterialName}:</b> ${item.NeededPerUnit} ${item.Unit} gerekli. ${stockStatus}</li>`;
+            }
+        });
+
+    } catch (e) {
+        console.error("Reçete hatası", e);
+    }
+}
+
+// Üretimi Başlat
+// app.js içinde bul ve değiştir:
+
+// app.js içinde 'adminExecuteProduction' fonksiyonunu bununla değiştir:
+
+// app.js içinde bul ve değiştir:
+
+async function adminExecuteProduction() {
+    // 1. Önce Dropdown'a bak
+    let productCode = document.getElementById('prodSelectProduct')?.value;
+
+    // 2. Dropdown boşsa (ki sende boş geliyor), HAFIZADAKİ KODA BAK
+    if (!productCode || productCode === "") {
+        console.log("Dropdown boş, hafızadan okunuyor...");
+        productCode = window.SELECTED_PROD_CODE;
+    }
+
+    const qtyInput = document.getElementById('prodQty');
+    const quantity = qtyInput ? qtyInput.value : 0;
+    const msg = document.getElementById('prodMsg');
+
+    if(msg) { msg.innerText = ''; msg.className = 'mt-3 fw-bold text-center'; }
+
+    console.log("İşlem Yapılacak Kod:", productCode);
+
+    if (!productCode) {
+        alert("Lütfen bir ürün seçiniz! (Reçetenin ekrana geldiğinden emin olun)");
+        return;
+    }
+
+    if (quantity <= 0) {
+        alert("Miktar en az 1 olmalıdır.");
+        return;
+    }
+
+    const btn = document.getElementById('btnExecuteProduction');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-cog fa-spin"></i> İşleniyor...';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/production/produce`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productCode, quantity })
+        });
+
+        const txt = await res.text();
+
+        if (!res.ok) {
+            if(msg) { msg.innerText = "❌ " + txt; msg.classList.add('text-danger'); }
+            alert("Hata: " + txt);
+        } else {
+            const data = JSON.parse(txt);
+            if(msg) { msg.innerText = "✅ " + data.message; msg.classList.add('text-success'); }
+            
+            // İşlem bitince listeleri güncelle
+            if(typeof adminLoadBOM === 'function') adminLoadBOM();
+            if(typeof loadProductionDropdown === 'function') loadProductionDropdown();
+            if(typeof loadPurchaseDropdowns === 'function') loadPurchaseDropdowns();
+        }
+    } catch (e) {
+        if(msg) { msg.innerText = "❌ Hata: " + e.message; msg.classList.add('text-danger'); }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+    }
 }
