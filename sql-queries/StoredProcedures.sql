@@ -112,17 +112,71 @@ GO
 -- This stored procedure creates a new purchase order associated with
 -- a supplier and a responsible employee.
 
-CREATE PROCEDURE sp_CreatePurchaseOrder
+CREATE OR ALTER PROCEDURE [dbo].[sp_CreatePurchaseOrder]
     @SupplierID INT,
-    @EmployeeID INT
+    @EmployeeID INT, 
+    @MaterialID INT,
+    @Quantity INT,
+    @ExpectedDate DATE
 AS
 BEGIN
-    INSERT INTO PurchaseOrder (SupplierID, ResponsibleEmployeeID)
-    VALUES (@SupplierID, @EmployeeID);
+    SET NOCOUNT ON;
 
-    SELECT SCOPE_IDENTITY() AS NewPurchaseOrderID;
-END;
+    DECLARE @CurrentPrice DECIMAL(10,2);
+    DECLARE @NewPOID INT;
+    DECLARE @RealEmployeeID INT;
+
+    IF @EmployeeID = 1 OR @EmployeeID IS NULL OR @EmployeeID = 0
+    BEGIN
+        SELECT TOP 1 @RealEmployeeID = EmployeeID 
+        FROM Employee 
+        WHERE EmployeeID <> 1
+        ORDER BY NEWID();
+
+        IF @RealEmployeeID IS NULL SET @RealEmployeeID = 1;
+    END
+    ELSE
+    BEGIN
+        SET @RealEmployeeID = @EmployeeID;
+    END
+
+    SELECT TOP 1 @CurrentPrice = ISNULL(UnitPrice, 0) FROM RawMaterial WHERE MaterialID = @MaterialID;
+    IF @CurrentPrice IS NULL SET @CurrentPrice = 0;
+
+    INSERT INTO PurchaseOrder (
+        SupplierID, 
+        ResponsibleEmployeeID, 
+        OrderDate, 
+        ExpectedDeliveryDate, 
+        OrderStatus, 
+        TotalAmount
+    )
+    VALUES (
+        @SupplierID, 
+        @RealEmployeeID, 
+        SYSDATETIME(), 
+        @ExpectedDate, 
+        'New', 
+        0
+    );
+
+    SET @NewPOID = SCOPE_IDENTITY();
+
+    INSERT INTO PurchaseOrderDetail (PurchaseOrderID, MaterialID, QuantityOrdered, UnitPrice)
+    VALUES (@NewPOID, @MaterialID, @Quantity, @CurrentPrice);
+
+    UPDATE PurchaseOrder 
+    SET TotalAmount = @Quantity * @CurrentPrice 
+    WHERE PurchaseOrderID = @NewPOID;
+
+    UPDATE RawMaterial
+    SET StockQuantity = ISNULL(StockQuantity, 0) + @Quantity
+    WHERE MaterialID = @MaterialID;
+
+    SELECT @NewPOID as PurchaseOrderID;
+END
 GO
+
 
 
 -- SP-8
@@ -209,8 +263,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_ListProducts
-  @Search NVARCHAR(100) = NULL,
-  @IncludeInactive BIT = 0
+  @Search NVARCHAR(100) = NULL
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -219,7 +272,7 @@ BEGIN
     p.ProductCode, p.ProductName, p.SalesPrice, p.SalesPriceWithVAT, p.Color,
     p.StockQuantity, p.ClassID, p.CollectionID, p.IsActive
   FROM dbo.Product p
-  WHERE (@IncludeInactive = 1 OR p.IsActive = 1)
+  WHERE p.IsActive = 1
     AND (
       @Search IS NULL
       OR p.ProductCode LIKE '%' + @Search + '%'
@@ -711,22 +764,29 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID=@EmployeeID)
     THROW 50201, 'Employee not found.', 1;
 
-  DELETE FROM Employee WHERE EmployeeID=@EmployeeID;
   UPDATE Employee
   SET IsActive = 0
   WHERE EmployeeID = @EmployeeID
 END
 GO
 
-CREATE PROCEDURE sp_ListPurchaseOrders
+CREATE OR ALTER PROCEDURE [dbo].[sp_ListPurchaseOrders]
 AS
 BEGIN
-  SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-  SELECT TOP (500)
-    PurchaseOrderID, OrderDate, OrderStatus, TotalAmount, SupplierID, ResponsibleEmployeeID
-  FROM PurchaseOrder
-  ORDER BY PurchaseOrderID DESC;
+    SELECT 
+        PO.PurchaseOrderID,
+        PO.OrderDate,
+        PO.OrderStatus,
+        PO.TotalAmount,
+        PO.ExpectedDeliveryDate,
+        S.CompanyName AS SupplierName,             
+        E.FirstName + ' ' + E.LastName AS EmployeeName 
+    FROM PurchaseOrder PO
+    LEFT JOIN Supplier S ON PO.SupplierID = S.SupplierID
+    LEFT JOIN Employee E ON PO.ResponsibleEmployeeID = E.EmployeeID
+    ORDER BY PO.OrderDate DESC;
 END
 GO
 

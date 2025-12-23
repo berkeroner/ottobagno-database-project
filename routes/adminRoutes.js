@@ -228,7 +228,7 @@ router.get('/suppliers', async (req, res) => {
 router.get('/raw-materials', async (req, res) => {
     try {
         const pool = await sql.connect(config);
-        const r = await pool.request().query('SELECT MaterialID, MaterialName, StockQuantity, Unit FROM RawMaterial');
+        const r = await pool.request().query('SELECT MaterialID, MaterialName, StockQuantity, UnitPrice FROM RawMaterial');
         res.json(r.recordset);
     } catch (e) { res.status(500).send(e.message); }
 });

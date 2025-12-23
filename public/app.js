@@ -336,7 +336,7 @@ async function loadPurchaseDropdowns() {
         if (matSelect) {
             matSelect.innerHTML = '<option value="">Select..</option>';
             materials.forEach(m => {
-                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stock: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stock: ${m.StockQuantity} ${m.UnitPrice || ''})</option>`;
             });
         }
     } catch (e) {
@@ -445,7 +445,7 @@ async function loadPurchaseDropdowns() {
         if (matSelect) {
             matSelect.innerHTML = '<option value="">Select...</option>';
             materials.forEach(m => {
-                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.UnitPrice || ''})</option>`;
             });
         }
     } catch (e) {
@@ -1276,7 +1276,7 @@ async function adminLoadBOM() {
                 stockStatus = `<span class="text-danger fw-bold">(YETERSİZ! ${item.CurrentStock} ${item.Unit} var)</span>`;
             }
             if(list) {
-                list.innerHTML += `<li><b>${item.MaterialName}:</b> ${item.NeededPerUnit} ${item.Unit} gerekli. ${stockStatus}</li>`;
+                list.innerHTML += `<li><b>${item.MaterialName}:</b> ${item.NeededPerUnit} ${item.UnitPrice} gerekli. ${stockStatus}</li>`;
             }
         });
 
