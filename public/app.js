@@ -305,6 +305,14 @@ function initAdminPage() {
   // Üretim sekmesi açılınca ürünleri doldur
   document.getElementById('production-tab')?.addEventListener('shown.bs.tab', loadProductionDropdown);
 
+  // --- Customer Management ---
+document.getElementById('btnCustomers')?.addEventListener('click', adminLoadCustomers);
+document.getElementById('btnCustAdd')?.addEventListener('click', adminAddCustomer);
+document.getElementById('btnCustDelete')?.addEventListener('click', adminDeleteCustomer);
+
+// Sekme açılınca otomatik yükle
+document.getElementById('customers-tab')?.addEventListener('shown.bs.tab', adminLoadCustomers);
+
   // Sayfa ilk açıldığında dropdownları sessizce yükle
   loadPurchaseDropdowns();
   loadProductionDropdown();
@@ -1271,12 +1279,12 @@ async function adminLoadBOM() {
         if(btnExec) btnExec.disabled = false;
 
         bomData.forEach(item => {
-            let stockStatus = `<span class="text-success">(${item.CurrentStock} ${item.Unit} var)</span>`;
+            let stockStatus = `<span class="text-success">(There is(are) ${item.CurrentStock} piece(s))</span>`;
             if (item.CurrentStock < item.NeededPerUnit) {
-                stockStatus = `<span class="text-danger fw-bold">(YETERSİZ! ${item.CurrentStock} ${item.Unit} var)</span>`;
+                stockStatus = `<span class="text-danger fw-bold">(Out of Stock! There are ${item.CurrentStock} ${item.Unit})</span>`;
             }
             if(list) {
-                list.innerHTML += `<li><b>${item.MaterialName}:</b> ${item.NeededPerUnit} ${item.UnitPrice} gerekli. ${stockStatus}</li>`;
+                list.innerHTML += `<li><b>${item.MaterialName}:</b> ${item.NeededPerUnit} piece(s) is(are) needed. ${stockStatus}</li>`;
             }
         });
 
@@ -1352,4 +1360,139 @@ async function adminExecuteProduction() {
         btn.disabled = false;
         btn.innerHTML = oldText;
     }
+}
+
+async function adminLoadCustomers() {
+  const tbody = document.getElementById('custList');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/customers`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    tbody.innerHTML = '';
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No customers.</td></tr>';
+      return;
+    }
+
+    data.forEach(c => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${c.CustomerID}</td>
+          <td class="fw-bold">${c.FirstName} ${c.LastName}</td>
+          <td>${c.PhoneNumber || ''}</td>
+          <td>${c.Email || ''}</td>
+          <td class="text-truncate" style="max-width:220px;" title="${c.Address || ''}">${c.Address || ''}</td>
+        </tr>
+      `;
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-danger">${e.message}</td></tr>`;
+  }
+}
+
+async function adminAddCustomer() {
+  const msg = document.getElementById('custMsg');
+  msg.className = 'small mt-2 fw-bold';
+  msg.innerText = '';
+
+  const body = {
+    firstName: document.getElementById('custFirst')?.value.trim(),
+    lastName: document.getElementById('custLast')?.value.trim(),
+    phoneNumber: document.getElementById('custPhone')?.value.trim(),
+    email: document.getElementById('custEmail')?.value.trim(),
+    address: document.getElementById('custAddress')?.value.trim(),
+    customerType: document.getElementById('custType')?.value || '',
+    regionId: document.getElementById('custRegionId')?.value ? Number(document.getElementById('custRegionId').value) : null,
+    countryId: document.getElementById('custCountryId')?.value ? Number(document.getElementById('custCountryId').value) : null
+  };
+
+  if (!body.firstName || !body.lastName || !body.phoneNumber || !body.email || !body.address) {
+    msg.classList.add('text-danger');
+    msg.innerText = 'Eksik alan var.';
+    return;
+  }
+
+  if (body.customerType === 'domestic' && !body.regionId) {
+    msg.classList.add('text-danger');
+    msg.innerText = 'Domestic seçtiysen RegionID gir.';
+    return;
+  }
+
+  if (body.customerType === 'international' && !body.countryId) {
+    msg.classList.add('text-danger');
+    msg.innerText = 'International seçtiysen CountryID gir.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/customers/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const txt = await res.text();
+    if (!res.ok) {
+      msg.classList.add('text-danger');
+      msg.innerText = '❌ ' + txt;
+      return;
+    }
+
+    msg.classList.add('text-success');
+    msg.innerText = '✅ Customer added';
+
+    // temizle
+    ['custFirst','custLast','custPhone','custEmail','custAddress','custRegionId','custCountryId'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const typeEl = document.getElementById('custType');
+    if (typeEl) typeEl.value = '';
+
+    adminLoadCustomers();
+  } catch (e) {
+    msg.classList.add('text-danger');
+    msg.innerText = '❌ ' + e.message;
+  }
+}
+
+async function adminDeleteCustomer() {
+  const id = Number(document.getElementById('custDelId')?.value);
+  const msg = document.getElementById('custMsg');
+
+  msg.className = 'small mt-2 fw-bold';
+  msg.innerText = '';
+
+  if (!id) return;
+
+  if (!confirm(`CustomerID ${id} silinsin mi?`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/customers/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerId: id })
+    });
+
+    const txt = await res.text();
+    if (!res.ok) {
+      msg.classList.add('text-danger');
+      msg.innerText = '❌ ' + txt;
+      return;
+    }
+
+    msg.classList.add('text-success');
+    msg.innerText = '✅ Customer deleted';
+    document.getElementById('custDelId').value = '';
+
+    adminLoadCustomers();
+  } catch (e) {
+    msg.classList.add('text-danger');
+    msg.innerText = '❌ ' + e.message;
+  }
 }

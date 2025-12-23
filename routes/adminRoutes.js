@@ -69,8 +69,6 @@ router.get('/orders', async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // ✅ Employee add (SP: sp_AddEmployee)
 router.post('/employees/add', async (req, res) => {
   const { firstName, lastName, role, phoneNumber, email } = req.body;
@@ -284,3 +282,94 @@ router.post('/purchase', async (req, res) => {
         res.status(500).send("Sunucu Hatası: " + e.message);
     }
 });
+
+router.get('/customers', async (req, res) => {
+  try {
+    const pool = await sql.connect(config);
+    const r = await pool.request().execute('sp_ListCustomers');
+    res.json(r.recordset);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+/**
+ * ✅ Customers - ADD (SP: sp_AddCustomer + optional Domestic/International)
+ * Body:
+ * { firstName, lastName, phoneNumber, email, address, customerType?, regionId?, countryId? }
+ */
+router.post('/customers/add', async (req, res) => {
+  const {
+    firstName, lastName, phoneNumber, email, address,
+    customerType, regionId, countryId
+  } = req.body;
+
+  if (!firstName || !lastName || !phoneNumber || !email || !address || !customerType) {
+    return res.status(400).send('Eksik alan var.');
+  }
+
+  try {
+    const pool = await sql.connect(config);
+
+    // 1) Customer ekle
+    const insertCustomer = await pool.request()
+      .input('FirstName', sql.NVarChar(50), firstName)
+      .input('LastName', sql.NVarChar(50), lastName)
+      .input('PhoneNumber', sql.NVarChar(20), phoneNumber)
+      .input('Email', sql.NVarChar(100), email)
+      .input('Address', sql.NVarChar(250), address)
+      // sp_AddCustomer New ID döndürmüyorsa aşağıdaki gibi SCOPE_IDENTITY eklemen iyi olur
+      .query(`
+        DECLARE @NewID INT;
+        INSERT INTO Customer (FirstName, LastName, PhoneNumber, Email, Address)
+        VALUES (@FirstName, @LastName, @PhoneNumber, @Email, @Address);
+        SET @NewID = SCOPE_IDENTITY();
+        SELECT @NewID AS NewCustomerID;
+      `);
+
+    const newCustomerId = insertCustomer.recordset?.[0]?.NewCustomerID;
+    if (!newCustomerId) throw new Error('NewCustomerID alınamadı.');
+
+    // 2) İsteğe bağlı: Domestic / International kaydı
+    if (customerType === 'domestic') {
+      if (!regionId) return res.status(400).send('regionId zorunlu.');
+      await pool.request()
+        .input('CustomerID', sql.Int, newCustomerId)
+        .input('RegionID', sql.Int, regionId)
+        .execute('sp_AddDomesticCustomer');
+    }
+
+    if (customerType === 'international') {
+      if (!countryId) return res.status(400).send('countryId zorunlu.');
+      await pool.request()
+        .input('CustomerID', sql.Int, newCustomerId)
+        .input('CountryID', sql.Int, countryId)
+        .execute('sp_AddInternationalCustomer');
+    }
+
+    res.json({ ok: true, customerId: newCustomerId });
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
+/**
+ * ✅ Customers - DELETE (SP: sp_DeleteCustomer)
+ */
+router.post('/customers/delete', async (req, res) => {
+  const { customerId } = req.body;
+  if (!customerId) return res.status(400).send('customerId zorunlu.');
+
+  try {
+    const pool = await sql.connect(config);
+    await pool.request()
+      .input('CustomerID', sql.Int, customerId)
+      .execute('sp_DeleteCustomer');
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
+module.exports = router;

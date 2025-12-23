@@ -926,3 +926,57 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE sp_ListCustomers
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.CustomerID,
+        c.FirstName,
+        c.LastName,
+        c.PhoneNumber,
+        c.Email,
+        c.Address
+    FROM Customer c
+    WHERE IsActive = 1
+    ORDER BY c.CustomerID;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_DeleteCustomer
+    @CustomerID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Customer WHERE CustomerID = @CustomerID)
+    BEGIN
+        RAISERROR('Customer not found.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        UPDATE DomesticCustomer
+        SET IsActive = 0
+        WHERE CustomerID = @CustomerID;
+
+        UPDATE InternationalCustomer
+        SET IsActive = 0
+        WHERE CustomerID = @CustomerID;
+
+        UPDATE Customer
+        SET IsActive = 0
+        WHERE CustomerID = @CustomerID;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        THROW;
+    END CATCH
+END;
+GO
+

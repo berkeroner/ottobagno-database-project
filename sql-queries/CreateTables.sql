@@ -49,12 +49,14 @@ CREATE TABLE Customer (
     LastName       NVARCHAR(50) NOT NULL,
     PhoneNumber    NVARCHAR(20) NOT NULL,
     Email          NVARCHAR(100) NOT NULL UNIQUE,
-    Address        NVARCHAR(250) NOT NULL
+    Address        NVARCHAR(250) NOT NULL,
+    IsActive       BIT NOT NULL DEFAULT (1)
 )
 
 CREATE TABLE DomesticCustomer (
     CustomerID   INT NOT NULL PRIMARY KEY,
     RegionID     INT NOT NULL,
+    IsActive     BIT DEFAULT (1),
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (RegionID) REFERENCES DomesticRegion(RegionID)
 )
@@ -62,6 +64,7 @@ CREATE TABLE DomesticCustomer (
 CREATE TABLE InternationalCustomer (
     CustomerID   INT NOT NULL PRIMARY KEY,
     CountryID    INT NOT NULL,
+    IsActive     BIT DEFAULT (1),
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (CountryID) REFERENCES Country(CountryID)
 )
