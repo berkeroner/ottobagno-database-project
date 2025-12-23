@@ -226,7 +226,6 @@ BEGIN
     SELECT *
     FROM vSalesOrderTotals
     WHERE CustomerID = @CustomerID;
-    ORDER BY OrderDate
 END;
 GO
 
@@ -838,19 +837,6 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE sp_DeactivateEmployee
-  @EmployeeID INT
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  IF NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID=@EmployeeID)
-    THROW 50201, 'Employee not found.', 1;
-
-  UPDATE Employee SET IsActive = 0 WHERE EmployeeID=@EmployeeID;
-END
-GO
-
 
 CREATE   PROCEDURE [dbo].[sp_ExecuteProduction]
     @ProductCode NVARCHAR(20),
@@ -918,8 +904,7 @@ BEGIN
     SELECT 
         RM.MaterialName,
         RM.StockQuantity as CurrentStock,
-        BOM.RequiredQuantity as NeededPerUnit,
-        RM.Unit
+        BOM.RequiredQuantity as NeededPerUnit
     FROM BillOfMaterials BOM
     JOIN RawMaterial RM ON BOM.MaterialID = RM.MaterialID
     WHERE BOM.ProductCode = @ProductCode;
