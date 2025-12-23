@@ -165,13 +165,14 @@ GO
 -- This stored procedure retrieves all sales orders for a given customer
 -- using a pre-aggregated view.
 
-CREATE PROCEDURE sp_GetCustomerOrders
+CREATE OR ALTER PROCEDURE sp_GetCustomerOrders
     @CustomerID INT
 AS
 BEGIN
     SELECT *
     FROM vSalesOrderTotals
     WHERE CustomerID = @CustomerID;
+    ORDER BY OrderDate
 END;
 GO
 
@@ -575,12 +576,12 @@ END
 GO
 
 
-CREATE PROCEDURE sp_ListEmployees
+CREATE OR ALTER PROCEDURE sp_ListEmployees
 AS
 BEGIN
   SET NOCOUNT ON;
 
-  SELECT EmployeeID, FirstName, LastName, Role, Email
+  SELECT EmployeeID, FirstName, LastName, Role, PhoneNumber, Email
   FROM Employee
   WHERE IsActive = 1
   ORDER BY EmployeeID;
@@ -701,7 +702,7 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE sp_DeleteEmployee
+CREATE OR ALTER PROCEDURE sp_DeleteEmployee
   @EmployeeID INT
 AS
 BEGIN
@@ -711,6 +712,9 @@ BEGIN
     THROW 50201, 'Employee not found.', 1;
 
   DELETE FROM Employee WHERE EmployeeID=@EmployeeID;
+  UPDATE Employee
+  SET IsActive = 0
+  WHERE EmployeeID = @EmployeeID
 END
 GO
 
@@ -786,3 +790,79 @@ BEGIN
   UPDATE Employee SET IsActive = 0 WHERE EmployeeID=@EmployeeID;
 END
 GO
+
+
+CREATE   PROCEDURE [dbo].[sp_ExecuteProduction]
+    @ProductCode NVARCHAR(20),
+    @ProductionQty INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    BEGIN TRY
+        IF EXISTS (
+            SELECT 1
+            FROM BillOfMaterials BOM
+            JOIN RawMaterial RM ON BOM.MaterialID = RM.MaterialID
+            WHERE BOM.ProductCode = @ProductCode
+              AND (BOM.RequiredQuantity * @ProductionQty) > RM.StockQuantity
+        )
+        BEGIN
+            THROW 51000, 'Yetersiz Hammadde Stoğu! Üretim yapılamaz.', 1;
+        END
+
+        UPDATE RM
+        SET RM.StockQuantity = RM.StockQuantity - (BOM.RequiredQuantity * @ProductionQty)
+        FROM RawMaterial RM
+        JOIN BillOfMaterials BOM ON RM.MaterialID = BOM.MaterialID
+        WHERE BOM.ProductCode = @ProductCode;
+
+        UPDATE Product
+        SET StockQuantity = StockQuantity + @ProductionQty
+        WHERE ProductCode = @ProductCode;
+
+        COMMIT TRANSACTION;
+        
+        SELECT 'Başarılı' as Status, @ProductionQty as ProducedQty;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE   PROCEDURE [dbo].[sp_GetOrderDetails]
+    @OrderID INT
+AS
+BEGIN
+    SELECT 
+        P.ProductCode,
+        P.ProductName,
+        OD.Quantity,
+        OD.UnitPrice,
+        (OD.Quantity * OD.UnitPrice) AS LineTotal
+    FROM OrderDetail OD
+    JOIN Product P ON OD.ProductCode = P.ProductCode
+    WHERE OD.OrderID = @OrderID;
+END;
+GO
+
+
+CREATE   PROCEDURE [dbo].[sp_GetProductBOM]
+    @ProductCode NVARCHAR(20)
+AS
+BEGIN
+    SELECT 
+        RM.MaterialName,
+        RM.StockQuantity as CurrentStock,
+        BOM.RequiredQuantity as NeededPerUnit,
+        RM.Unit
+    FROM BillOfMaterials BOM
+    JOIN RawMaterial RM ON BOM.MaterialID = RM.MaterialID
+    WHERE BOM.ProductCode = @ProductCode;
+END;
+GO
+

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OttoBagno | Yönetici Paneli</title>
+  <title>OttoBagno | Admin Panel</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,12 +21,12 @@
 
 <nav class="navbar navbar-dark bg-dark mb-4 shadow">
   <div class="container-fluid px-4">
-    <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-user-shield"></i> Yönetici Paneli</a>
+    <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-user-shield"></i> Admin Panel</a>
     <div class="d-flex align-items-center gap-3">
       <a href="index.html" class="btn btn-outline-light btn-sm">
-        <i class="fa-solid fa-arrow-left"></i> Kataloğa Dön
+        <i class="fa-solid fa-arrow-left"></i> Back to Catalog
       </a>
-      <button onclick="logout()" class="btn btn-danger btn-sm">Çıkış</button>
+      <button onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
     </div>
   </div>
 </nav>
@@ -36,7 +36,7 @@
   <div class="alert alert-primary d-flex justify-content-between align-items-center shadow-sm" role="alert">
     <div>
       <i class="fa-solid fa-circle-user me-2"></i>
-      <span id="adminInfo" class="fw-bold">Yükleniyor...</span>
+      <span id="adminInfo" class="fw-bold">Loading...</span>
     </div>
     <div id="adminMsg" class="fw-bold text-danger"></div>
   </div>
@@ -46,37 +46,37 @@
 
         <li class="nav-item">
           <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders-pane" type="button">
-            Siparişler
+            Orders
           </button>
         </li>
 
         <li class="nav-item">
           <button class="nav-link" id="allorders-tab" data-bs-toggle="tab" data-bs-target="#allorders-pane" type="button">
-            Tüm Satışlar
+            All Sales History
           </button>
         </li>
 
         <li class="nav-item">
           <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase-pane" type="button">
-            <i class="fa-solid fa-truck-field"></i> Hammadde Alımı
+            Raw Material Purchase
           </button>
         </li>
 
         <li class="nav-item">
             <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-pane" type="button">
-              <i class="fa-solid fa-industry"></i> Üretim
+              Production Management
             </button>
         </li>
 
         <li class="nav-item">
           <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
-            Ürün Yönetimi
+            Product Management
           </button>
         </li>
 
         <li class="nav-item">
           <button class="nav-link" id="employees-tab" data-bs-toggle="tab" data-bs-target="#employees-pane" type="button">
-            Çalışan Yönetimi
+            Employee Management
           </button>
         </li>
 
@@ -86,13 +86,13 @@
 
         <div class="tab-pane fade show active" id="orders-pane">
           <div class="d-flex justify-content-between mb-3">
-            <h5>Son Siparişler</h5>
-            <button id="btnOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Yenile</button>
+            <h5>Recent Orders</h5>
+            <button id="btnOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
           </div>
           <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
             <table class="table table-striped table-hover table-sm text-center">
               <thead class="table-dark sticky-top">
-                <tr><th>ID</th><th>Müşteri ID</th><th>Durum</th><th>Tutar</th><th>Tarih</th></tr>
+                <tr><th>ID</th><th>Customer ID</th><th>Status</th><th>Total</th><th>Date</th></tr>
               </thead>
               <tbody id="orderList"></tbody>
             </table>
@@ -101,13 +101,13 @@
 
         <div class="tab-pane fade" id="allorders-pane">
           <div class="d-flex justify-content-between mb-3">
-            <h5>Tüm Satış Geçmişi</h5>
-            <button id="btnAllOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Yenile</button>
+            <h5>All Sales History</h5>
+            <button id="btnAllOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
           </div>
           <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
             <table class="table table-striped table-hover table-sm text-center">
               <thead class="table-dark sticky-top">
-                <tr><th>OrderID</th><th>Date</th><th>Status</th><th>Total</th><th>Currency</th><th>CustomerID</th><th>EmployeeID</th><th>CountryID</th></tr>
+                <tr><th>Order ID</th><th>Date</th><th>Status</th><th>Total</th><th>Currency</th><th>Customer ID</th><th>Employee ID</th><th>Country ID</th></tr>
               </thead>
               <tbody id="allOrderList"></tbody>
             </table>
@@ -118,30 +118,30 @@
           <div class="row g-3">
             <div class="col-md-4">
               <div class="card shadow-sm border-0 bg-light">
-                <div class="card-header bg-success text-white fw-bold">Hammadde Alım Formu</div>
+                <div class="card-header bg-success text-white fw-bold">Raw Material Purchase Form</div>
                 <div class="card-body">
                   <div class="mb-2">
-                    <label class="form-label small fw-bold">Tedarikçi (Supplier)</label>
-                    <select class="form-select" id="supplierSelect"><option value="">Seçiniz...</option></select>
+                    <label class="form-label small fw-bold">Supplier</label>
+                    <select class="form-select" id="supplierSelect"><option value="">Select...</option></select>
                   </div>
                   <div class="mb-2">
-                    <label class="form-label small fw-bold">Hammadde (Material)</label>
-                    <select class="form-select" id="materialSelect"><option value="">Seçiniz...</option></select>
+                    <label class="form-label small fw-bold">Material</label>
+                    <select class="form-select" id="materialSelect"><option value="">Select...</option></select>
                   </div>
                   
                   <div class="row g-2 mb-3">
                     <div class="col">
-                        <label class="form-label small fw-bold">Miktar</label>
-                        <input id="pchQty" type="number" class="form-control" placeholder="Adet/KG">
+                        <label class="form-label small fw-bold">Quantity</label>
+                        <input id="pchQty" type="number" class="form-control" placeholder="Quantity">
                     </div>
                     <div class="col">
-                        <label class="form-label small fw-bold">Teslim Tarihi</label>
+                        <label class="form-label small fw-bold">Delivery Date</label>
                         <input id="pchDate" type="date" class="form-control">
                     </div>
                   </div>
 
                   <button id="btnPurchaseSubmit" type="submit" form="purchaseForm" class="btn btn-success w-100">
-                    <i class="fa-solid fa-check"></i> Siparişi Ver
+                    <i class="fa-solid fa-check"></i> Submit Purchase Order
                   </button>
                   <div id="poMsg" class="mt-2 fw-bold text-center"></div>
                 </div>
@@ -150,13 +150,13 @@
 
             <div class="col-md-8">
               <div class="d-flex justify-content-between mb-2">
-                  <h5 class="mb-0">Hammadde Sipariş Geçmişi</h5>
-                  <button id="btnPurchaseList" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-rotate"></i> Yenile</button>
+                  <h5 class="mb-0">Raw Material Purchase History</h5>
+                  <button id="btnPurchaseList" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-rotate"></i> Refresh</button>
               </div>
               <div class="table-responsive border rounded bg-white">
                 <table class="table table-hover text-center mb-0">
                   <thead class="table-secondary">
-                    <tr><th>ID</th><th>Tarih</th><th>Durum</th><th>Tutar</th><th>Tedarikçi</th><th>Personel</th></tr>
+                    <tr><th>ID</th><th>Date</th><th>Status</th><th>Total</th><th>Supplier</th><th>Employee</th></tr>
                   </thead>
                   <tbody id="poList"></tbody>
                 </table>
@@ -170,33 +170,33 @@
                 <div class="col-md-8">
                     <div class="card shadow-sm mt-4 border-warning">
                         <div class="card-header bg-warning text-dark fw-bold">
-                            <i class="fa-solid fa-gears"></i> Üretim Emri (Production Order)
+                            <i class="fa-solid fa-gears"></i> Production Order
                         </div>
                         <div class="card-body">
-                            <p class="text-muted small">Buradan stoktaki hammaddeleri kullanarak nihai ürün (Lavabo, Dolap vb.) üretimi yapabilirsiniz. Sistem stokları otomatik düşecektir.</p>
+                            <p class="text-muted small">From here you can produce final products (lavabo, cabinet, etc.) using the raw materials in stock. The system will automatically update the inventory.</p>
                             
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Üretilecek Ürün</label>
+                                <label class="form-label fw-bold">Product to be Produced</label>
                                 <select id="prodSelectProduct" class="form-select">
-                                    <option value="">Ürün Seçiniz...</option>
+                                    <option value="">Select Product...</option>
                                     </select>
                             </div>
         
                             <div id="bomInfo" class="alert alert-light border d-none">
-                                <h6 class="fw-bold text-info"><i class="fa-solid fa-clipboard-list"></i> Reçete (1 Adet İçin Gerekenler):</h6>
+                                <h6 class="fw-bold text-info"><i class="fa-solid fa-clipboard-list"></i> BOM (1 Unit Required):</h6>
                                 <ul id="bomList" class="mb-0 small list-unstyled"></ul>
                             </div>
         
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Üretim Adedi</label>
+                                <label class="form-label fw-bold">Production Quantity</label>
                                 <div class="input-group">
                                     <input type="number" id="prodQty" class="form-control" value="1" min="1">
-                                    <span class="input-group-text">Adet</span>
+                                    <span class="input-group-text">Quantity</span>
                                 </div>
                             </div>
         
                             <button id="btnExecuteProduction" class="btn btn-dark w-100 py-2">
-                                <i class="fa-solid fa-hammer"></i> Üretimi Başlat ve Stokları Güncelle
+                                Start Production
                             </button>
                             
                             <div id="prodMsg" class="mt-3 fw-bold text-center"></div>
@@ -211,19 +211,18 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-8">
                     <div class="card shadow-sm h-100">
-                        <div class="card-header bg-primary text-white"><i class="fa-solid fa-plus"></i> Hızlı Ürün Ekle</div>
+                        <div class="card-header bg-success text-white"><i class="fa-solid fa-plus"></i> Add Product</div>
                         <div class="card-body">
                             <form id="addProductForm" class="row g-2">
-                                <div class="col-md-3"><input id="pCode" class="form-control form-control-sm" placeholder="Kod (Zorunlu)"></div>
-                                <div class="col-md-5"><input id="pName" class="form-control form-control-sm" placeholder="Ürün Adı"></div>
-                                <div class="col-md-2"><input id="pPrice" type="number" class="form-control form-control-sm" placeholder="Fiyat"></div>
-                                <div class="col-md-2"><input id="pStock" type="number" class="form-control form-control-sm" placeholder="Stok"></div>
-                                
-                                <div class="col-md-3"><input id="pColor" class="form-control form-control-sm" placeholder="Renk"></div>
+                                <div class="col-md-3"><input id="pCode" class="form-control form-control-sm" placeholder="Product Code"></div>
+                                <div class="col-md-5"><input id="pName" class="form-control form-control-sm" placeholder="Product Name"></div>
+                                <div class="col-md-2"><input id="pPrice" type="number" class="form-control form-control-sm" placeholder="Price"></div>
+                                <div class="col-md-2"><input id="pStock" type="number" class="form-control form-control-sm" placeholder="Stock"></div>
+                                <div class="col-md-3"><input id="pColor" class="form-control form-control-sm" placeholder="Color"></div>
                                 <div class="col-md-3"><input id="pClass" type="number" class="form-control form-control-sm" placeholder="Class ID"></div>
-                                <div class="col-md-3"><input id="pColl" type="number" class="form-control form-control-sm" placeholder="Coll ID"></div>
+                                <div class="col-md-3"><input id="pColl" type="number" class="form-control form-control-sm" placeholder="Collection ID"></div>
                                 <div class="col-md-3">
-                                    <button type="button" id="btnAddProduct" class="btn btn-primary btn-sm w-100">Kaydet</button>
+                                    <button type="button" id="btnAddProduct" class="btn btn-success btn-sm w-100">Save</button>
                                 </div>
                             </form>
                         </div>
@@ -231,11 +230,11 @@
                 </div>
                 <div class="col-md-4">
                     <div class="card shadow-sm h-100 border-danger">
-                        <div class="card-header bg-danger text-white"><i class="fa-solid fa-trash"></i> Ürün Sil</div>
+                        <div class="card-header bg-danger text-white"><i class="fa-solid fa-trash"></i> Delete Product</div>
                         <div class="card-body d-flex align-items-center">
                             <div class="input-group">
-                                <input id="delCode" type="text" class="form-control form-control-sm" placeholder="Ürün Kodu">
-                                <button class="btn btn-outline-danger btn-sm" type="button" id="btnDeleteProduct">Sil</button>
+                                <input id="delCode" type="text" class="form-control form-control-sm" placeholder="Product Code">
+                                <button class="btn btn-outline-danger btn-sm" type="button" id="btnDeleteProduct">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -244,16 +243,16 @@
 
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
-                    <span class="fw-bold">Ürün Listesi</span>
+                    <span class="fw-bold">Product List</span>
                     <div class="d-flex gap-2">
-                        <input id="productSearch" class="form-control form-control-sm" placeholder="Ara..." style="width: 200px;">
-                        <button id="btnProducts" class="btn btn-sm btn-secondary">Yenile</button>
+                        <input id="productSearch" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
+                        <button id="btnProducts" class="btn btn-sm btn-secondary">Search</button>
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive" style="max-height: 500px; overflow-y: auto;">
                     <table class="table table-bordered table-hover text-center table-sm mb-0">
                         <thead class="table-light sticky-top">
-                            <tr><th>Kod</th><th>Ad</th><th>Fiyat</th><th>Stok</th><th>Renk</th><th>İşlem</th></tr>
+                            <tr><th>Code</th><th>Name</th><th>Price</th><th>Price with VAT</th><th>Color</th><th>Stock</th><th>Class</th><th>Collection</th></tr>
                         </thead>
                         <tbody id="productList"></tbody>
                     </table>
@@ -265,29 +264,29 @@
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <div class="card shadow-sm">
-                <div class="card-header bg-info text-white"><i class="fa-solid fa-user-plus"></i> Çalışan Ekle</div>
+                <div class="card-header bg-success text-white"><i class="fa-solid fa-user-plus"></i> Add Employee</div>
                 <div class="card-body">
                     <div class="input-group mb-2">
-                        <input id="empFirst" class="form-control form-control-sm" placeholder="Ad">
-                        <input id="empLast" class="form-control form-control-sm" placeholder="Soyad">
+                        <input id="empFirst" class="form-control form-control-sm" placeholder="First Name">
+                        <input id="empLast" class="form-control form-control-sm" placeholder="Last Name">
                     </div>
                     <div class="input-group mb-2">
-                        <input id="empRole" class="form-control form-control-sm" placeholder="Rol">
-                        <input id="empPhone" class="form-control form-control-sm" placeholder="Tel">
+                        <input id="empRole" class="form-control form-control-sm" placeholder="Role">
+                        <input id="empPhone" class="form-control form-control-sm" placeholder="Phone">
                     </div>
                     <input id="empEmail" class="form-control form-control-sm mb-2" placeholder="Email">
-                    <button id="btnEmpAdd" class="btn btn-info text-white btn-sm w-100">Kaydet</button>
+                    <button id="btnEmpAdd" class="btn btn-success w-100 mt-3">Save</button>
                     <div id="empMsg" class="small mt-1"></div>
                 </div>
               </div>
             </div>
             <div class="col-md-6">
               <div class="card shadow-sm border-danger">
-                <div class="card-header bg-danger text-white"><i class="fa-solid fa-user-minus"></i> Çalışan Çıkar</div>
+                <div class="card-header bg-danger text-white"><i class="fa-solid fa-user-minus"></i> Delete Employee</div>
                 <div class="card-body">
                     <div class="input-group">
-                        <input id="empDelId" type="number" class="form-control" placeholder="ID Giriniz">
-                        <button id="btnEmpDelete" class="btn btn-outline-danger">Sil</button>
+                        <input id="empDelId" type="number" class="form-control" placeholder="Enter ID">
+                        <button id="btnEmpDelete" class="btn btn-outline-danger">Delete</button>
                     </div>
                 </div>
               </div>
@@ -295,13 +294,13 @@
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-              <h5 class="mb-0">Personel Listesi</h5>
-              <button id="btnEmployees" class="btn btn-sm btn-outline-info">Yenile</button>
+              <h5 class="mb-0">Employee List</h5>
+            <button id="btnEmployees" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
           </div>
           <div class="table-responsive">
             <table class="table table-bordered table-hover text-center table-sm">
               <thead class="table-light">
-                <tr><th>ID</th><th>Ad Soyad</th><th>Rol</th><th>Email</th></tr>
+                <tr><th>ID</th><th>Full Name</th><th>Role</th><th>Phone</th><th>Email</th></tr>
               </thead>
               <tbody id="empList"></tbody>
             </table>

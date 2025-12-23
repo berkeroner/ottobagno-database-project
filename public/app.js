@@ -519,6 +519,7 @@ async function adminLoadEmployees() {
           <td>${e.EmployeeID}</td>
           <td>${e.FirstName} ${e.LastName}</td>
           <td><span class="badge bg-info text-dark">${e.Role}</span></td>
+          <td>${e.PhoneNumber}</td>
           <td>${e.Email}</td>
         </tr>`;
     });
@@ -963,13 +964,29 @@ async function initMyOrdersPage() {
 
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="5" class="py-4"><div class="spinner-border text-primary"></div></td></tr>';
+  // Loading spinner
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="py-4 text-center">
+        <div class="spinner-border text-primary"></div>
+      </td>
+    </tr>
+  `;
 
   try {
-    const res = await fetch(`${API_BASE}/api/orders/my-orders?customerId=${customer.CustomerID}`);
+    const res = await fetch(
+      `${API_BASE}/api/orders/my-orders?customerId=${customer.CustomerID}`
+    );
+
     if (!res.ok) throw new Error("Siparişler yüklenemedi.");
 
-    const orders = await res.json();
+    const response = await res.json();
+
+    // API array değilse güvene al
+    const orders = Array.isArray(response)
+      ? response
+      : (response?.data ?? []);
+
     tbody.innerHTML = '';
 
     if (orders.length === 0) {
@@ -978,34 +995,67 @@ async function initMyOrdersPage() {
     }
 
     orders.forEach(o => {
-      const dateStr = new Date(o.OrderDate).toLocaleDateString('tr-TR', {
-        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
+      // Tarih güvenliği
+      const dateObj = o.OrderDate ? new Date(o.OrderDate) : null;
+      const dateStr =
+        dateObj && !isNaN(dateObj)
+          ? dateObj.toLocaleDateString('tr-TR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '-';
 
+      // Status badge
       let badgeClass = 'bg-secondary';
       if (o.OrderStatus === 'New') badgeClass = 'bg-primary';
       else if (o.OrderStatus === 'Paid') badgeClass = 'bg-success';
       else if (o.OrderStatus === 'Shipped') badgeClass = 'bg-info text-dark';
       else if (o.OrderStatus === 'Cancelled') badgeClass = 'bg-danger';
 
+      // 💥 toFixed hatasını önleyen kısım
+      const totalAmount = Number(o.TotalAmount ?? 0);
+      const totalStr = Number.isFinite(totalAmount)
+        ? totalAmount.toFixed(2)
+        : '0.00';
+
       tbody.innerHTML += `
         <tr>
-          <td class="fw-bold">#${o.OrderID}</td>
+          <td class="fw-bold">#${o.OrderID ?? '-'}</td>
           <td>${dateStr}</td>
-          <td class="fw-bold text-dark">${o.TotalAmount.toFixed(2)} ${o.UsedCurrency || 'TRY'}</td>
-          <td><span class="badge ${badgeClass} px-3 py-2 rounded-pill">${o.OrderStatus}</span></td>
+          <td class="fw-bold text-dark">
+            ${totalStr} ${o.UsedCurrency || 'TRY'}
+          </td>
           <td>
-            <button class="btn btn-sm btn-outline-primary" onclick="showOrderDetails(${o.OrderID})">
+            <span class="badge ${badgeClass} px-3 py-2 rounded-pill">
+              ${o.OrderStatus || '-'}
+            </span>
+          </td>
+          <td>
+            <button
+              class="btn btn-sm btn-outline-primary"
+              onclick="showOrderDetails(${o.OrderID})"
+            >
               <i class="fa-solid fa-list-ul"></i> İncele
             </button>
           </td>
-        </tr>`;
+        </tr>
+      `;
     });
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-3">${err.message}</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-danger py-3 text-center">
+          ${err.message || 'Bir hata oluştu'}
+        </td>
+      </tr>
+    `;
   }
 }
+
 
 // ===================== SİPARİŞ DETAYI GÖSTER =====================
 

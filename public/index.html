@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OttoBagno | Ürün Kataloğu</title>
+  <title>OttoBagno</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,29 +29,29 @@
       <ul class="navbar-nav ms-auto align-items-center">
         <li class="nav-item" id="adminPanel" style="display:none;">
             <a class="nav-link text-warning fw-bold me-3" href="admin.html">
-                <i class="fa-solid fa-user-shield"></i> Yönetici Paneli
+                <i class="fa-solid fa-user-shield"></i> Admin Panel
             </a>
         </li>
         
         <li class="nav-item me-3">
             <a href="cart.html" class="btn btn-outline-light position-relative">
-                <i class="fa-solid fa-cart-shopping"></i> Sepetim
+                <i class="fa-solid fa-cart-shopping"></i> Cart
                 <span id="cartCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
             </a>
         </li>
         
         <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
-        <i class="fa-solid fa-user-circle"></i> <span id="userName">Hesabım</span>
+        <i class="fa-solid fa-user-circle"></i> <span id="userName">Account</span>
     </a>
     <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="my-orders.html"><i class="fa-solid fa-box-open me-2"></i> Siparişlerim</a></li>
+        <li><a class="dropdown-item" href="my-orders.html"><i class="fa-solid fa-box-open me-2"></i> Orders</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><button class="dropdown-item text-danger" onclick="logout()"><i class="fa-solid fa-right-from-bracket me-2"></i> Çıkış</button></li>
+        <li><button class="dropdown-item text-danger" onclick="logout()"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</button></li>
     </ul>
 </li>
         <li class="nav-item ms-2">
-            <button class="btn btn-sm btn-danger" onclick="logout()">Çıkış</button>
+            <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
         </li>
       </ul>
     </div>
@@ -64,29 +64,29 @@
     <div class="col-lg-3 mb-4">
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white fw-bold py-3">
-            <i class="fa-solid fa-filter text-primary"></i> Filtrele
+            <i class="fa-solid fa-filter text-primary"></i> Filter
         </div>
         <div class="card-body">
             <div class="mb-4">
-                <label class="form-label text-muted small fw-bold">SINIF (CLASS)</label>
-                <select id="classSelect" class="form-select"><option value="">Tümü</option></select>
+                <label class="form-label text-muted small fw-bold">CLASS</label>
+                <select id="classSelect" class="form-select"><option value="">All</option></select>
             </div>
             <div class="mb-4">
-                <label class="form-label text-muted small fw-bold">KOLEKSİYON</label>
-                <select id="collectionSelect" class="form-select"><option value="">Tümü</option></select>
+                <label class="form-label text-muted small fw-bold">COLLECTION</label>
+                <select id="collectionSelect" class="form-select"><option value="">All</option></select>
             </div>
-            <button type="button" id="btnResetFilters" class="btn btn-secondary w-100">Temizle</button>
+            <button type="button" id="btnResetFilters" class="btn btn-secondary w-100">Clear Filters</button>
         </div>
       </div>
     </div>
 
     <div class="col-lg-9">
-        <h4 class="mb-3">Ürün Kataloğu</h4>
+        <h4 class="mb-3">Product Catalog</h4>
         
         <div id="products" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
             <div class="text-center w-100 mt-5">
                 <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-muted">Ürünler Yükleniyor...</p>
+                <p class="mt-2 text-muted">Loading Products...</p>
             </div>
         </div>
     </div>
@@ -99,11 +99,11 @@
 
 <script>
   (function () {
-    console.log("Sayfa başlatılıyor...");
+    console.log("Catalog page script running...");
 
     // app.js kontrolü
     if (typeof requireCustomerOrRedirect !== 'function') {
-        console.error("HATA: app.js dosyası yüklenemedi veya fonksiyonlar eksik.");
+        console.error("app.js is not loaded properly.");
         return;
     }
 
@@ -141,11 +141,11 @@
         if (typeof initCatalogPage === 'function') {
             initCatalogPage();
         } else {
-            console.error("initCatalogPage fonksiyonu bulunamadı.");
+            console.error("initCatalogPage function is not defined.");
         }
 
     } catch (err) {
-        console.error("Beklenmeyen hata:", err);
+        console.error("Unexpected error:", err);
     }
   })();
 </script>
