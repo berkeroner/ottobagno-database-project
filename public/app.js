@@ -29,7 +29,7 @@ async function login() {
   const msgEl = document.getElementById('loginMsg');
 
   if (!firstName || !lastName) {
-    msgEl.innerText = 'Lütfen Ad ve Soyad giriniz.';
+    msgEl.innerText = 'Enter name and surname';
     return;
   }
 
@@ -63,7 +63,7 @@ async function login() {
     localStorage.setItem('customer', JSON.stringify(customer));
     window.location.href = 'index.html';
   } catch (err) {
-    msgEl.innerText = "Sunucu bağlantı hatası.";
+    msgEl.innerText = "Server connection error.";
     console.error(err);
   }
 }
@@ -87,7 +87,7 @@ function updateCartUI() {
   if (navBadge) navBadge.innerText = totalQty;
 
   const pageBadge = document.getElementById('itemCountBadge');
-  if (pageBadge) pageBadge.innerText = `${totalQty} Ürün`;
+  if (pageBadge) pageBadge.innerText = `${totalQty} Products`;
 
   const totalEl = document.getElementById('cartTotal');
   if (totalEl) {
@@ -107,7 +107,7 @@ function addToCart(product) {
   if (qtyInput) {
     qtyToAdd = parseInt(qtyInput.value);
     if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
-      alert("Lütfen geçerli bir adet giriniz.");
+      alert("Please enter a valid quantity.");
       return;
     }
   }
@@ -116,7 +116,7 @@ function addToCart(product) {
   const currentQtyInCart = existing ? existing.quantity : 0;
 
   if (currentQtyInCart + qtyToAdd > product.StockQuantity) {
-    alert(`Stok yetersiz! Stoktaki miktar: ${product.StockQuantity}, Sepetinizdeki: ${currentQtyInCart}`);
+    alert(`Out of stock! Quantity in stock: ${product.StockQuantity}, Your cart: ${currentQtyInCart}`);
     return;
   }
 
@@ -132,7 +132,7 @@ function addToCart(product) {
 
   setCart(cart);
 
-  showNotification(`${product.ProductName} (${qtyToAdd} adet) sepete eklendi!`);
+  showNotification(`${product.ProductName} (${qtyToAdd} items) added to cart!`);
 
   if (qtyInput) qtyInput.value = 1;
 }
@@ -178,7 +178,7 @@ async function loadFilters() {
       loadFilteredProducts();
     };
   } catch (e) {
-    console.log("Filtre yükleme hatası", e);
+    console.log("Filter loading error", e);
   }
 }
 
@@ -246,11 +246,6 @@ async function loadFilteredProducts() {
   }
 }
 
-// ===================== SAYFA: ADMIN PANEL =====================
-
-// ===================== SAYFA: ADMIN PANEL =====================
-
-// ===================== SAYFA: ADMIN PANEL =====================
 
 function initAdminPage() {
   const c = requireCustomerOrRedirect();
@@ -258,7 +253,7 @@ function initAdminPage() {
 
   // Admin Değilse Ana Sayfaya Gönder
   if (c.FirstName !== 'System' && c.LastName !== 'Admin') {
-    alert("Yetkisiz Giriş!");
+    alert("Unauthorized Access!");
     window.location.href = 'index.html';
     return;
   }
@@ -327,7 +322,7 @@ async function loadPurchaseDropdowns() {
         const supSelect = document.getElementById('supplierSelect');
         
         if (supSelect) {
-            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            supSelect.innerHTML = '<option value="">Select...</option>';
             suppliers.forEach(s => {
                 supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
             });
@@ -339,13 +334,13 @@ async function loadPurchaseDropdowns() {
         const matSelect = document.getElementById('materialSelect');
 
         if (matSelect) {
-            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            matSelect.innerHTML = '<option value="">Select..</option>';
             materials.forEach(m => {
-                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
+                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stock: ${m.StockQuantity} ${m.Unit || ''})</option>`;
             });
         }
     } catch (e) {
-        console.error("Dropdown hatası:", e);
+        console.error("Dropdown error:", e);
     }
 }
 
@@ -359,7 +354,7 @@ async function loadProductionDropdown() {
     
     // KONTROL: Eğer zaten seçenekler yüklenmişse (1'den fazla seçenek varsa) tekrar yükleme yapma!
     if (prodSelect && prodSelect.options.length > 1) {
-        console.log("Ürün listesi zaten yüklü, pas geçiliyor.");
+        console.log("The product list is already uploaded, it's being skipped.");
         return;
     }
 
@@ -369,7 +364,7 @@ async function loadProductionDropdown() {
 
         if (prodSelect) {
             // Önce temizle
-            prodSelect.innerHTML = '<option value="">Ürün Seçiniz...</option>';
+            prodSelect.innerHTML = '<option value="">Select product...</option>';
             
             products.forEach(p => {
                 // Kod ve İsim verisini garantiye al
@@ -381,10 +376,10 @@ async function loadProductionDropdown() {
                     prodSelect.innerHTML += `<option value="${code}">${code} - ${name} (Stok: ${stock})</option>`;
                 }
             });
-            console.log("Ürün listesi başarıyla yüklendi.");
+            console.log("Product list successfully loaded.");
         }
     } catch (e) {
-        console.error("Ürün yükleme hatası:", e);
+        console.error("Product loading error:", e);
     }
 }
 // ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
@@ -398,7 +393,7 @@ async function loadPurchaseDropdowns() {
         const supSelect = document.getElementById('supplierSelect');
         
         if (supSelect) {
-            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            supSelect.innerHTML = '<option value="">Select...</option>';
             suppliers.forEach(s => {
                 supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
             });
@@ -410,13 +405,13 @@ async function loadPurchaseDropdowns() {
         const matSelect = document.getElementById('materialSelect');
 
         if (matSelect) {
-            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            matSelect.innerHTML = '<option value="">Select...</option>';
             materials.forEach(m => {
                 matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
             });
         }
     } catch (e) {
-        console.error("Dropdown hatası:", e);
+        console.error("Dropdown error:", e);
     }
 }
 
@@ -436,7 +431,7 @@ async function loadPurchaseDropdowns() {
         const supSelect = document.getElementById('supplierSelect');
         
         if (supSelect) {
-            supSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            supSelect.innerHTML = '<option value="">Select...</option>';
             suppliers.forEach(s => {
                 supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
             });
@@ -448,13 +443,13 @@ async function loadPurchaseDropdowns() {
         const matSelect = document.getElementById('materialSelect');
 
         if (matSelect) {
-            matSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            matSelect.innerHTML = '<option value="">Select...</option>';
             materials.forEach(m => {
                 matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
             });
         }
     } catch (e) {
-        console.error("Dropdown hatası:", e);
+        console.error("Dropdown error:", e);
     }
 }
 
@@ -498,7 +493,7 @@ async function adminDeleteProduct() {
     });
 
     const txt = await res.text();
-    document.getElementById('adminMsg').innerText = res.ok ? "✅ Silindi" : "❌ Hata: " + txt;
+    document.getElementById('adminMsg').innerText = res.ok ? "✅ Deleted" : "❌ Error: " + txt;
   } catch (e) {
     alert(e.message);
   }
@@ -597,7 +592,7 @@ async function adminAddEmployee() {
 
   if (!body.firstName || !body.lastName || !body.role || !body.phoneNumber || !body.email) {
     msg.classList.add('text-danger');
-    msg.innerText = 'Eksik alan var.';
+    msg.innerText = 'Empty places.';
     return;
   }
 
@@ -611,12 +606,12 @@ async function adminAddEmployee() {
     const txt = await res.text();
     if (!res.ok) {
       msg.classList.add('text-danger');
-      msg.innerText = '❌ Hata: ' + txt;
+      msg.innerText = '❌ Error: ' + txt;
       return;
     }
 
     msg.classList.add('text-success');
-    msg.innerText = '✅ Çalışan eklendi';
+    msg.innerText = '✅ Employee added';
 
     // formu temizle
     document.getElementById('empFirst').value = '';
@@ -656,7 +651,7 @@ async function adminDeleteEmployee() {
     }
 
     msg.classList.add('text-success');
-    msg.innerText = '✅ Çalışan silindi';
+    msg.innerText = '✅ Employee deleted';
     document.getElementById('empDelId').value = '';
     adminLoadEmployees();
   } catch (e) {
@@ -678,8 +673,8 @@ async function adminCreatePurchaseOrder() {
 
   // 2. Eğer elementlerden biri sayfada yoksa hata vermeden dur.
   if (!supplierEl || !materialEl || !qtyEl || !dateEl) {
-      alert("Hata: Form elemanları sayfada bulunamadı. (ID Uyuşmazlığı)");
-      console.error("Bulunamayan Elementler:", { supplierEl, materialEl, qtyEl, dateEl });
+      alert("Error: Form elements could not be found on the page. (ID Mismatch)");
+      console.error("Undetectable Elements:", { supplierEl, materialEl, qtyEl, dateEl });
       return;
   }
 
@@ -691,7 +686,7 @@ async function adminCreatePurchaseOrder() {
 
   // 4. Boş Alan Kontrolü
   if (!supplierId || !materialId || !quantity || !expectedDate) {
-    alert('Lütfen Tedarikçi, Hammadde, Miktar ve Tarih alanlarını doldurunuz.');
+    alert('Please fill in Supplier, Material, Quantity and Date fields.');
     return;
   }
 
@@ -709,11 +704,11 @@ async function adminCreatePurchaseOrder() {
   };
 
   const btn = document.getElementById('btnPurchaseSubmit') || document.getElementById('btnCreatePurchaseOrder');
-  const oldText = btn ? btn.innerHTML : "Kaydet";
+  const oldText = btn ? btn.innerHTML : "Save";
   
   if(btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
   }
 
   try {
@@ -727,10 +722,10 @@ async function adminCreatePurchaseOrder() {
     const txt = await res.text();
     
     if (!res.ok) {
-      alert('❌ Sunucu Hatası: ' + txt);
+      alert('❌ Server Error: ' + txt);
     } else {
-      alert('✅ Sipariş başarıyla verildi! Stoklar güncellendi.');
-      
+      alert('✅ Order placed successfully! Stock levels updated.');
+
       // Formu temizle
       supplierEl.value = "";
       materialEl.value = "";
@@ -742,7 +737,7 @@ async function adminCreatePurchaseOrder() {
       if(typeof loadPurchaseDropdowns === 'function') loadPurchaseDropdowns();
     }
   } catch (e) {
-    alert('❌ Bağlantı Hatası: ' + e.message);
+    alert('❌ Connection Error: ' + e.message);
   } finally {
       if(btn) {
           btn.disabled = false;
@@ -752,32 +747,62 @@ async function adminCreatePurchaseOrder() {
 }
 
 // ✅ Hammadde siparişlerini listele
+// app.js içinde bul ve değiştir:
+
 async function adminLoadPurchaseOrders() {
   const tbody = document.getElementById('poList');
+  if(!tbody) return;
+
   tbody.innerHTML = '<tr><td colspan="6">Yükleniyor...</td></tr>';
 
   try {
     const res = await fetch(`${API_BASE}/api/admin/purchase-orders`);
     if (!res.ok) throw new Error(await res.text());
+    
     const data = await res.json();
+    
+    // HATA AYIKLAMA: Gelen veriyi konsola yaz (F12 -> Console'da görebilirsin)
+    console.log("📥 Incoming Order List:", data);
 
     tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6">Henüz sipariş yok.</td></tr>';
+        return;
+    }
+
     data.forEach(po => {
+      // Tarih Formatı
+      const dateStr = new Date(po.OrderDate).toLocaleDateString('tr-TR', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+      });
+
+      // Tutar Kontrolü
+      const total = po.TotalAmount != null ? Number(po.TotalAmount).toFixed(2) + ' ₺' : '0.00 ₺';
+
+      // İsim Kontrolü (undefined sorununu çözen kısım)
+      // Önce SupplierName'e bak, yoksa CompanyName'e bak, o da yoksa SupplierID'yi yaz
+      const supName = po.SupplierName || po.CompanyName || `ID: ${po.SupplierID || '-'}`;
+      
+      // Önce EmployeeName'e bak, yoksa FirstName'e bak, o da yoksa EmployeeID'yi yaz
+      const empName = po.EmployeeName || po.FirstName || `ID: ${po.ResponsibleEmployeeID || '-'}`;
+
       tbody.innerHTML += `
         <tr>
           <td>${po.PurchaseOrderID}</td>
-          <td>${new Date(po.OrderDate).toLocaleString('tr-TR')}</td>
-          <td>${po.OrderStatus}</td>
-          <td>${Number(po.TotalAmount).toFixed(2)}</td>
-          <td>${po.SupplierID}</td>
-          <td>${po.ResponsibleEmployeeID}</td>
+          <td>${dateStr}</td>
+          <td><span class="badge bg-primary">${po.OrderStatus}</span></td>
+          <td>${total}</td>
+          <td class="fw-bold text-dark">${supName}</td>
+          <td class="text-muted">${empName}</td>
         </tr>`;
     });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${e.message}</td></tr>`;
+    console.error("Listeleme Hatası:", e);
+    tbody.innerHTML = `<tr><td colspan="6" class="text-danger">Hata: ${e.message}</td></tr>`;
   }
 }
-
 // ===================== PAYMENT.HTML (Manuel Ödeme) =====================
 
 async function pay() {
@@ -787,19 +812,19 @@ async function pay() {
   const resEl = document.getElementById('payResult');
 
   if (!orderId || !amount) {
-    resEl.innerText = "Eksik bilgi.";
+    resEl.innerText = "Empty places.";
     resEl.className = "text-danger";
     return;
   }
 
   try {
-    console.log(`Ödeme: Order ${orderId}, Tutar ${amount}, Yöntem ${method}`);
+    console.log(`Payment: Order ${orderId}, Amount ${amount}, Method ${method}`);
 
-    resEl.innerText = "✅ Ödeme Başarıyla Kaydedildi!";
+    resEl.innerText = "✅ Payment successfully recorded!";
     resEl.className = "text-success fw-bold";
     setTimeout(() => window.location.href = 'index.html', 2000);
   } catch (e) {
-    resEl.innerText = "Hata: " + e.message;
+    resEl.innerText = "Error: " + e.message;
   }
 }
 
@@ -813,7 +838,7 @@ function initCartPage() {
 
   list.innerHTML = '';
   if (!cart.length) {
-    list.innerHTML = '<li class="list-group-item text-center py-5">Sepet Boş</li>';
+    list.innerHTML = '<li class="list-group-item text-center py-5">Empty cart</li>';
     return;
   }
 
@@ -873,7 +898,7 @@ function showNotification(message) {
 // ===================== CHECKOUT (Ödeme Sayfası Başlatıcı) =====================
 
 function initCheckoutPage() {
-  console.log("Checkout sayfası başlatılıyor...");
+  console.log("The checkout page is starting....");
 
   const customer = requireCustomerOrRedirect();
   if (!customer) return;
@@ -885,17 +910,17 @@ function initCheckoutPage() {
   if (btn) {
     btn.onclick = null;
     btn.onclick = checkoutAndPay;
-    console.log("Ödeme butonu aktif edildi.");
+    console.log("Payment button activated.");
   } else {
-    console.error("HATA: 'btnCheckoutPay' id'li buton bulunamadı!");
+    console.error("ERROR: Button with ID 'btnCheckoutPay' not found!");
   }
 }
 
 async function checkoutAndPay() {
-  console.log("Ödeme işlemi tetiklendi.");
+  console.log("Payment process initiated.");
 
   const cart = getCart();
-  if (!cart || cart.length === 0) return alert('Sepetiniz boş, ödeme yapılamaz.');
+  if (!cart || cart.length === 0) return alert('Your shopping cart is empty, payment cannot be processed.');
 
   const customer = requireCustomerOrRedirect();
 
@@ -904,7 +929,7 @@ async function checkoutAndPay() {
   const paymentMethod = document.getElementById('paymentMethod')?.value;
 
   if (!usedCurrency || !countryIdVal || !paymentMethod) {
-    return alert('Lütfen para birimi, ülke kodu ve ödeme yöntemini kontrol ediniz.');
+    return alert('Please check currency, country code and payment method.');
   }
 
   const countryId = parseInt(countryIdVal, 10);
@@ -940,12 +965,12 @@ async function checkoutAndPay() {
 
     const data = await res.json();
 
-    alert(`✅ Sipariş Başarıyla Alındı!\nSipariş No: ${data.orderId}\nTutar: ${data.totalAmount} ${usedCurrency}`);
+    alert(`✅ Order placed successfully!\nOrder No: ${data.orderId}\nAmount: ${data.totalAmount} ${usedCurrency}`);
 
     localStorage.removeItem('cart');
     window.location.href = 'index.html';
   } catch (e) {
-    console.error("Ödeme Hatası:", e);
+    console.error("Payment Error:", e);
     alert("İşlem Başarısız: " + e.message);
 
     btn.disabled = false;
@@ -978,7 +1003,7 @@ async function initMyOrdersPage() {
       `${API_BASE}/api/orders/my-orders?customerId=${customer.CustomerID}`
     );
 
-    if (!res.ok) throw new Error("Siparişler yüklenemedi.");
+    if (!res.ok) throw new Error("Orders could not be loaded.");
 
     const response = await res.json();
 
@@ -1066,8 +1091,8 @@ async function showOrderDetails(orderId) {
 
   const modal = new bootstrap.Modal(modalEl);
 
-  modalTitle.innerText = `Sipariş Detayı #${orderId}`;
-  modalBody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
+  modalTitle.innerText = `Order Details #${orderId}`;
+  modalBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
   modal.show();
 
   try {
@@ -1077,7 +1102,7 @@ async function showOrderDetails(orderId) {
     modalBody.innerHTML = '';
 
     if (items.length === 0) {
-      modalBody.innerHTML = '<tr><td colspan="5">Detay bulunamadı.</td></tr>';
+      modalBody.innerHTML = '<tr><td colspan="5">No details found.</td></tr>';
       return;
     }
 
@@ -1101,7 +1126,7 @@ async function adminLoadProducts(searchText = '') {
   const tbody = document.getElementById('productList');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="9">Yükleniyor...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Loading...</td></tr>';
 
   try {
     const qs = new URLSearchParams();
@@ -1154,7 +1179,7 @@ async function adminQuickDeleteProduct(code) {
   const delInput = document.getElementById('delCode');
   if (delInput) delInput.value = code;
 
-  if (!confirm(`"${code}" kodlu ürünü silmek istediğine emin misin?`)) return;
+  if (!confirm(`"${code}" Are you sure you want to delete the coded product?`)) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/admin/products/delete`, {
@@ -1185,13 +1210,13 @@ async function adminLoadProductsForProduction() {
         const res = await fetch(`${API_BASE}/api/admin/products`); // Var olan ürün endpointini kullanıyoruz
         const data = await res.json();
         
-        select.innerHTML = '<option value="">Seçiniz...</option>';
+        select.innerHTML = '<option value="">Select...</option>';
         data.forEach(p => {
             // Sadece reçetesi olanları getirmek daha iyi olurdu ama şimdilik hepsini getiriyoruz
             select.innerHTML += `<option value="${p.ProductCode}">${p.ProductCode} - ${p.ProductName} (Stok: ${p.StockQuantity})</option>`;
         });
     } catch (e) {
-        console.error("Ürünler yüklenemedi", e);
+        console.error("The products could not be loaded.", e);
     }
 }
 
@@ -1206,7 +1231,7 @@ async function adminLoadBOM() {
     // Dropdown sıfırlansa bile bu değişken burada kalır.
     if (productCode) {
         window.SELECTED_PROD_CODE = productCode;
-        console.log("Seçim Hafızaya Alındı:", window.SELECTED_PROD_CODE);
+        console.log("The election has been put into memory:", window.SELECTED_PROD_CODE);
     }
 
     const list = document.getElementById('bomList');
@@ -1228,7 +1253,7 @@ async function adminLoadBOM() {
                 infoBox.classList.remove('d-none');
                 infoBox.className = 'alert alert-warning';
             }
-            if(list) list.innerHTML = '<li>Bu ürün için reçete tanımlanmamış. Üretim yapılamaz.</li>';
+            if(list) list.innerHTML = '<li>No recipe defined for this product. Production cannot be made.</li>';
             
             // Reçete yoksa butonu kapat
             const btnExec = document.getElementById('btnExecuteProduction');
@@ -1256,7 +1281,7 @@ async function adminLoadBOM() {
         });
 
     } catch (e) {
-        console.error("Reçete hatası", e);
+        console.error("Prescription error", e);
     }
 }
 
@@ -1273,7 +1298,7 @@ async function adminExecuteProduction() {
 
     // 2. Dropdown boşsa (ki sende boş geliyor), HAFIZADAKİ KODA BAK
     if (!productCode || productCode === "") {
-        console.log("Dropdown boş, hafızadan okunuyor...");
+        console.log("Dropdown empty, reading from memory...");
         productCode = window.SELECTED_PROD_CODE;
     }
 
@@ -1283,22 +1308,22 @@ async function adminExecuteProduction() {
 
     if(msg) { msg.innerText = ''; msg.className = 'mt-3 fw-bold text-center'; }
 
-    console.log("İşlem Yapılacak Kod:", productCode);
+    console.log("Code to be processed:", productCode);
 
     if (!productCode) {
-        alert("Lütfen bir ürün seçiniz! (Reçetenin ekrana geldiğinden emin olun)");
+        alert("Please select product! (Make sure the prescription appears on the screen.)");
         return;
     }
 
     if (quantity <= 0) {
-        alert("Miktar en az 1 olmalıdır.");
+        alert("Quantity must be at least 1.");
         return;
     }
 
     const btn = document.getElementById('btnExecuteProduction');
     const oldText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-cog fa-spin"></i> İşleniyor...';
+    btn.innerHTML = '<i class="fa-solid fa-cog fa-spin"></i> Processing...';
 
     try {
         const res = await fetch(`${API_BASE}/api/admin/production/produce`, {
@@ -1311,7 +1336,7 @@ async function adminExecuteProduction() {
 
         if (!res.ok) {
             if(msg) { msg.innerText = "❌ " + txt; msg.classList.add('text-danger'); }
-            alert("Hata: " + txt);
+            alert("Error: " + txt);
         } else {
             const data = JSON.parse(txt);
             if(msg) { msg.innerText = "✅ " + data.message; msg.classList.add('text-success'); }
@@ -1322,7 +1347,7 @@ async function adminExecuteProduction() {
             if(typeof loadPurchaseDropdowns === 'function') loadPurchaseDropdowns();
         }
     } catch (e) {
-        if(msg) { msg.innerText = "❌ Hata: " + e.message; msg.classList.add('text-danger'); }
+        if(msg) { msg.innerText = "❌ Error: " + e.message; msg.classList.add('text-danger'); }
     } finally {
         btn.disabled = false;
         btn.innerHTML = oldText;

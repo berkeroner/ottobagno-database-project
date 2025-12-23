@@ -29,7 +29,7 @@ router.post('/checkout-pay', async (req, res) => {
   }
 
   if (!Array.isArray(items) || items.length === 0) {
-    return res.status(400).send('Sepet boş.');
+    return res.status(400).send('Empty cart.');
   }
 
   try {

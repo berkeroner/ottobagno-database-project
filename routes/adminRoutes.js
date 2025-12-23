@@ -197,7 +197,7 @@ router.post('/production/produce', async (req, res) => {
     const { productCode, quantity } = req.body;
     
     if (!productCode || !quantity || quantity <= 0) {
-        return res.status(400).send("Geçersiz veri.");
+        return res.status(400).send("Invalid data.");
     }
 
     try {
@@ -207,7 +207,7 @@ router.post('/production/produce', async (req, res) => {
             .input('ProductionQty', sql.Int, quantity)
             .execute('sp_ExecuteProduction'); // SQL prosedürünü çağır
 
-        res.json({ ok: true, message: "Üretim başarıyla tamamlandı, stoklar güncellendi." });
+        res.json({ ok: true, message: "Production was successfully completed, and stock levels have been updated." });
     } catch (e) {
         // SQL'den gelen "Yetersiz Hammadde" hatasını burası yakalar
         res.status(400).send(e.message); 
@@ -245,27 +245,42 @@ router.get('/products-simple', async (req, res) => {
 // adminRoutes.js dosyasının içine ekle:
 
 // ✅ Hammadde Siparişi (Tarihli ve Otomatik Fiyatlı Yeni Versiyon)
+// routes/adminRoutes.js dosyasındaki ilgili kısmı bununla değiştir:
+
+// --- YENİ HAMMADDE SİPARİŞ ROTASI ---
 router.post('/purchase', async (req, res) => {
+    // 1. Frontend'den gelen veriyi konsola yaz (Hata ayıklamak için)
+    console.log("📥 Gelen Sipariş İsteği:", req.body);
+
     const { supplierId, employeeId, materialId, quantity, expectedDate } = req.body;
 
-    // Veri kontrolü
+    // 2. Veri Kontrolü
     if (!supplierId || !materialId || !quantity || !expectedDate) {
-        return res.status(400).send("Eksik bilgi: Tedarikçi, Hammadde, Miktar veya Tarih yok.");
+        console.error("❌ Eksik Veri Hatası");
+        return res.status(400).send("Eksik bilgi: Lütfen tüm alanların doluluğunu kontrol edin.");
     }
 
     try {
         const pool = await sql.connect(config);
+
+        // 3. SQL Prosedürünü Çağır
+        // Buradaki input isimleri (SupplierID vb.) SQL'deki @SupplierID ile EŞLEŞMELİDİR.
         await pool.request()
             .input('SupplierID', sql.Int, supplierId)
-            .input('EmployeeID', sql.Int, employeeId || 1) // Admin ID yoksa 1 varsay
+            .input('EmployeeID', sql.Int, employeeId || 1) // Eğer employeeId yoksa 1 (Admin) kullan
             .input('MaterialID', sql.Int, materialId)
             .input('Quantity', sql.Int, quantity)
-            .input('ExpectedDate', sql.Date, expectedDate)
-            .execute('sp_CreatePurchaseOrder'); // SQL Prosedürünü çağır
+            .input('ExpectedDate', sql.Date, expectedDate) // Tarih formatı YYYY-MM-DD olmalı
+            .execute('sp_CreatePurchaseOrder');
         
-        res.json({ message: 'Sipariş başarıyla verildi.' });
+        console.log("✅ Sipariş Veritabanına İşlendi.");
+        res.json({ message: 'Sipariş başarıyla oluşturuldu.' });
+
     } catch (e) {
-        console.error("Sipariş Hatası:", e);
-        res.status(500).send('Sunucu Hatası: ' + e.message);
+        // 4. Hatanın asıl sebebini terminale yaz
+        console.error("🔥 SQL HATASI DETAYI:", e);
+        
+        // Frontend'e hatayı gönder
+        res.status(500).send("Sunucu Hatası: " + e.message);
     }
 });
