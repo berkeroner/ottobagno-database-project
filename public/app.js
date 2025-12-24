@@ -1,7 +1,6 @@
-// ===================== AYARLAR =====================
-const API_BASE = ''; // Backend farklı porttaysa: 'http://localhost:3000'
 
-// ===================== AUTH & GÜVENLİK =====================
+const API_BASE = '';
+
 
 function getLoggedInCustomer() {
   const s = localStorage.getItem('customer');
@@ -151,7 +150,7 @@ async function initCatalogPage() {
     const pnl = document.getElementById('adminPanel');
     if (pnl) pnl.style.display = 'block';
   }
-
+  await loadBestSellers();
   await loadFilters();
   await loadFilteredProducts();
 }
@@ -222,7 +221,7 @@ async function loadFilteredProducts() {
             </div>
             <div class="card-body d-flex flex-column">
               <h6 class="card-title fw-bold text-truncate" title="${p.ProductName}">${p.ProductName}</h6>
-              <small class="text-muted mb-3">Kod: ${p.ProductCode}</small>
+              <small class="text-muted mb-3">Product Code: ${p.ProductCode}</small>
 
               <div class="mt-auto">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -287,6 +286,10 @@ function initAdminPage() {
 
   // --- Hammadde (Satın Alma) ---
   document.getElementById('btnPurchaseList')?.addEventListener('click', adminLoadPurchaseOrders);
+  document.getElementById('purchase-tab')?.addEventListener('shown.bs.tab', () => {
+  loadPurchaseDropdowns();
+  adminLoadRawMaterialStockStatus();
+  });
   
   // Sipariş verme butonu
   const btnPurchase = document.getElementById('btnPurchaseSubmit') || document.getElementById('btnCreatePurchaseOrder');
@@ -294,9 +297,6 @@ function initAdminPage() {
       e.preventDefault(); 
       adminCreatePurchaseOrder();
   });
-
-  // Hammadde sekmesi açılınca dropdownları doldur
-  document.getElementById('purchase-tab')?.addEventListener('shown.bs.tab', loadPurchaseDropdowns);
 
   // --- Üretim (Production) ---
   document.getElementById('btnExecuteProduction')?.addEventListener('click', adminExecuteProduction);
@@ -390,76 +390,10 @@ async function loadProductionDropdown() {
         console.error("Product loading error:", e);
     }
 }
-// ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
-
-// 1. Hammadde Sekmesi İçin
-async function loadPurchaseDropdowns() {
-    try {
-        // Tedarikçiler
-        const resSup = await fetch(`${API_BASE}/api/admin/suppliers`);
-        const suppliers = await resSup.json();
-        const supSelect = document.getElementById('supplierSelect');
-        
-        if (supSelect) {
-            supSelect.innerHTML = '<option value="">Select...</option>';
-            suppliers.forEach(s => {
-                supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
-            });
-        }
-
-        // Hammaddeler
-        const resMat = await fetch(`${API_BASE}/api/admin/raw-materials`);
-        const materials = await resMat.json();
-        const matSelect = document.getElementById('materialSelect');
-
-        if (matSelect) {
-            matSelect.innerHTML = '<option value="">Select...</option>';
-            materials.forEach(m => {
-                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.Unit || ''})</option>`;
-            });
-        }
-    } catch (e) {
-        console.error("Dropdown error:", e);
-    }
-}
-
 
 // ===================== DİĞER ADMIN FONKSİYONLARI (Aynen Kalabilir) =====================
 // (adminAddProduct, adminDeleteProduct, adminExecuteProduction vb. buranın altında kalmalı)
 // app.js içinde initAdminPage fonksiyonunun en altına şunları ekle:
-
-// ===================== DROPDOWN DOLDURMA FONKSİYONLARI =====================
-
-// 1. Hammadde Sekmesi Açılınca Tedarikçi ve Malzemeleri Getir
-async function loadPurchaseDropdowns() {
-    try {
-        // Tedarikçiler
-        const resSup = await fetch(`${API_BASE}/api/admin/suppliers`);
-        const suppliers = await resSup.json();
-        const supSelect = document.getElementById('supplierSelect');
-        
-        if (supSelect) {
-            supSelect.innerHTML = '<option value="">Select...</option>';
-            suppliers.forEach(s => {
-                supSelect.innerHTML += `<option value="${s.SupplierID}">${s.CompanyName}</option>`;
-            });
-        }
-
-        // Hammaddeler
-        const resMat = await fetch(`${API_BASE}/api/admin/raw-materials`);
-        const materials = await resMat.json();
-        const matSelect = document.getElementById('materialSelect');
-
-        if (matSelect) {
-            matSelect.innerHTML = '<option value="">Select...</option>';
-            materials.forEach(m => {
-                matSelect.innerHTML += `<option value="${m.MaterialID}">${m.MaterialName} (Stok: ${m.StockQuantity} ${m.UnitPrice || ''})</option>`;
-            });
-        }
-    } catch (e) {
-        console.error("Dropdown error:", e);
-    }
-}
 
 // 2. Üretim Sekmesi Açılınca Ürünleri Getir
 
@@ -1165,12 +1099,7 @@ async function adminLoadProducts(searchText = '') {
           <td>${p.StockQuantity ?? ''}</td>
           <td>${p.ClassID ?? ''}</td>
           <td>${p.CollectionID ?? ''}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-danger"
-              onclick="adminQuickDeleteProduct('${String(p.ProductCode).replace(/'/g, "\\'")}')">
-              Sil
-            </button>
-          </td>
+          <td>${p.StockStatus || ''}</td>
         </tr>
       `;
     });
@@ -1494,5 +1423,106 @@ async function adminDeleteCustomer() {
   } catch (e) {
     msg.classList.add('text-danger');
     msg.innerText = '❌ ' + e.message;
+  }
+}
+
+// ===================== BEST SELLERS (VIEW) =====================
+
+function renderBestSellers(items) {
+  const el = document.getElementById('bestSellers');
+  if (!el) return;
+
+  if (!items || items.length === 0) {
+    el.innerHTML = `<div class="alert alert-warning w-100">Best seller data not found.</div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+
+  items.forEach(p => {
+    const revenue = Number(p.TotalRevenue || 0);
+    el.innerHTML += `
+      <div class="col">
+        <div class="card h-100 shadow-sm product-card">
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 140px;">
+            <i class="fa-solid fa-fire fa-3x text-danger"></i>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <h6 class="card-title fw-bold text-truncate" title="${p.ProductName}">${p.ProductName}</h6>
+            <small class="text-muted mb-2">Product Code: ${p.ProductCode}</small>
+
+            <div class="mt-auto">
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">Quantity Sold</span>
+                <span class="fw-bold">${p.TotalQtySold}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+async function loadBestSellers(top = 12) {
+  const el = document.getElementById('bestSellers');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="text-center w-100 mt-3">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Loading Best Sellers...</p>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/products/best-sellers?top=${top}`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderBestSellers(data);
+  } catch (e) {
+    console.error("Best sellers error:", e);
+    el.innerHTML = `<div class="alert alert-danger w-100">Best sellers could not be loaded: ${e.message}</div>`;
+  }
+}
+
+async function adminLoadRawMaterialStockStatus() {
+  const tbody = document.getElementById('rawMatStockList');
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/raw-material-stock-status`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    tbody.innerHTML = '';
+
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted">No raw materials found.</td></tr>`;
+      return;
+    }
+
+    data.forEach(rm => {
+      const isReorder = rm.StockStatus === 'REORDER REQUIRED';
+      const badgeClass = isReorder ? 'bg-danger' : 'bg-success';
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${rm.MaterialID}</td>
+          <td class="fw-bold">${rm.MaterialName}</td>
+          <td>${rm.StockQuantity}</td>
+          <td>${rm.SafetyStockLevel}</td>
+          <td>
+            <span class="badge ${badgeClass}">${rm.StockStatus}</span>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (e) {
+    console.error("raw material stock status error:", e);
+    tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Error: ${e.message}</td></tr>`;
   }
 }

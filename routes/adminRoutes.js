@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { sql, config } = require('../db');
 
-// ✅ Ürün ekle (SP: sp_AddProduct)
+// ADD PRODUCT
+
 router.post('/products/add', async (req, res) => {
   const { productCode, productName, salesPrice, color, stockQuantity, classId, collectionId } = req.body;
 
   if (!productCode || !productName || salesPrice == null || !color || stockQuantity == null) {
-    return res.status(400).send('Eksik alan var.');
+    return res.status(400).send('There are missing fields.');
   }
 
   try {
@@ -29,10 +30,11 @@ router.post('/products/add', async (req, res) => {
   }
 });
 
-// ✅ Ürün sil (SP: sp_DeleteProductFromSales)
+// DELETE PRODUCT
+
 router.post('/products/delete', async (req, res) => {
   const { productCode } = req.body;
-  if (!productCode) return res.status(400).send('productCode zorunlu.');
+  if (!productCode) return res.status(400).send('The productCode is required.');
 
   try {
     const pool = await sql.connect(config);
@@ -47,18 +49,20 @@ router.post('/products/delete', async (req, res) => {
   }
 });
 
-// ✅ Tüm çalışanlar (SP: sp_ListEmployees)
+// LIST EMPLOYEES
+
 router.get('/employees', async (req, res) => {
   try {
     const pool = await sql.connect(config);
-    const r = await pool.request().execute('sp_ListEmployees');
+    const r = await pool.request().execute('sp_ListEmployee');
     res.json(r.recordset);
   } catch (e) {
     res.status(500).send(e.message);
   }
 });
 
-// ✅ Tüm siparişler (SP: sp_ListAllSalesOrders)
+// LIST SALES ORDERS
+
 router.get('/orders', async (req, res) => {
   try {
     const pool = await sql.connect(config);
@@ -69,11 +73,12 @@ router.get('/orders', async (req, res) => {
   }
 });
 
-// ✅ Employee add (SP: sp_AddEmployee)
+// ADD EMPLOYEE
+
 router.post('/employees/add', async (req, res) => {
   const { firstName, lastName, role, phoneNumber, email } = req.body;
   if(!firstName || !lastName || !role || !phoneNumber || !email) {
-    return res.status(400).send('Eksik alan var.');
+    return res.status(400).send('There are missing fields.');
   }
 
   try {
@@ -92,10 +97,11 @@ router.post('/employees/add', async (req, res) => {
   }
 });
 
-// ✅ Employee delete (SP: sp_DeleteEmployee)
+// DELETE EMPLOYEE
+
 router.post('/employees/delete', async (req, res) => {
   const { employeeId } = req.body;
-  if(!employeeId) return res.status(400).send('employeeId zorunlu.');
+  if(!employeeId) return res.status(400).send('The employeeId is required.');
 
   try {
     const pool = await sql.connect(config);
@@ -109,7 +115,8 @@ router.post('/employees/delete', async (req, res) => {
   }
 });
 
-// ✅ Purchase orders list (SP: sp_ListPurchaseOrders)
+// LIST PURCHASE ORDERS
+
 router.get('/purchase-orders', async (req, res) => {
   try {
     const pool = await sql.connect(config);
@@ -120,29 +127,28 @@ router.get('/purchase-orders', async (req, res) => {
   }
 });
 
-// ✅ Create purchase order with details
+// CREATE PURCHASE ORDER WITH DETAILS
+
 router.post('/purchase-orders/create', async (req, res) => {
   const { supplierId, employeeId, items } = req.body;
   if(!supplierId || !employeeId || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).send('Eksik alan var.');
+    return res.status(400).send('There are missing fields.');
   }
 
   try {
     const pool = await sql.connect(config);
 
-    // 1) create purchase order
     const created = await pool.request()
       .input('SupplierID', sql.Int, supplierId)
       .input('EmployeeID', sql.Int, employeeId)
       .execute('sp_CreatePurchaseOrder');
 
     const purchaseOrderId = created.recordset?.[0]?.NewPurchaseOrderID;
-    if(!purchaseOrderId) throw new Error('PurchaseOrderID alınamadı.');
+    if(!purchaseOrderId) throw new Error('Failed to create purchase order.');
 
-    // 2) add details
     for (const it of items) {
       if(!it.materialId || !it.quantity || it.unitPrice == null) {
-        throw new Error('Item alanları eksik.');
+        throw new Error('There are missing fields in items.');
       }
 
       await pool.request()
@@ -150,7 +156,7 @@ router.post('/purchase-orders/create', async (req, res) => {
         .input('MaterialID', sql.Int, it.materialId)
         .input('Quantity', sql.Int, it.quantity)
         .input('UnitPrice', sql.Decimal(10,2), it.unitPrice)
-        .execute('sp_AddPurchaseOrderDetailAndRecalc'); // aşağıda SQL'de oluşturacağız
+        .execute('sp_AddPurchaseOrderDetailAndRecalc');
     }
 
     res.json({ ok:true, purchaseOrderId });
@@ -159,7 +165,8 @@ router.post('/purchase-orders/create', async (req, res) => {
   }
 });
 
-// ✅ Ürünleri listele (SP: sp_ListProducts) - search opsiyonel
+// LIST PRODUCTS
+
 router.get('/products', async (req, res) => {
   const search = req.query.search || null;
 
@@ -175,9 +182,8 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// ... Diğer rotaların altına ekle ...
+// PRODUCTION ROUTES
 
-// 1. Bir ürünün reçetesini getir (Frontend'de göstermek için)
 router.get('/production/bom/:productCode', async (req, res) => {
     try {
         const pool = await sql.connect(config);
@@ -190,12 +196,13 @@ router.get('/production/bom/:productCode', async (req, res) => {
     }
 });
 
-// 2. Üretimi Gerçekleştir
+// PRODUCE PRODUCT
+
 router.post('/production/produce', async (req, res) => {
     const { productCode, quantity } = req.body;
     
     if (!productCode || !quantity || quantity <= 0) {
-        return res.status(400).send("Invalid data.");
+        return res.status(400).send("The productCode and a positive quantity are required.");
     }
 
     try {
@@ -203,17 +210,17 @@ router.post('/production/produce', async (req, res) => {
         await pool.request()
             .input('ProductCode', sql.NVarChar(20), productCode)
             .input('ProductionQty', sql.Int, quantity)
-            .execute('sp_ExecuteProduction'); // SQL prosedürünü çağır
+            .execute('sp_ExecuteProduction');
 
         res.json({ ok: true, message: "Production was successfully completed, and stock levels have been updated." });
     } catch (e) {
-        // SQL'den gelen "Yetersiz Hammadde" hatasını burası yakalar
+
         res.status(400).send(e.message); 
     }
 });
-// routes/adminRoutes.js içine ekle:
 
-// 1. Tedarikçileri Listele
+// LIST SUPPLIERS
+
 router.get('/suppliers', async (req, res) => {
     try {
         const pool = await sql.connect(config);
@@ -222,7 +229,8 @@ router.get('/suppliers', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
-// 2. Hammaddeleri Listele
+// LIST RAW MATERIALS
+
 router.get('/raw-materials', async (req, res) => {
     try {
         const pool = await sql.connect(config);
@@ -231,57 +239,35 @@ router.get('/raw-materials', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
-// 3. Ürünleri Listele (Üretim sekmesi için)
-// Zaten /products rotan varsa onu kullanırız, yoksa bunu ekle:
-router.get('/products-simple', async (req, res) => {
-    try {
-        const pool = await sql.connect(config);
-        const r = await pool.request().query('SELECT ProductCode, ProductName, StockQuantity FROM Product');
-        res.json(r.recordset);
-    } catch (e) { res.status(500).send(e.message); }
-});
-// adminRoutes.js dosyasının içine ekle:
+// CREATE PURCHASE ORDER
 
-// ✅ Hammadde Siparişi (Tarihli ve Otomatik Fiyatlı Yeni Versiyon)
-// routes/adminRoutes.js dosyasındaki ilgili kısmı bununla değiştir:
-
-// --- YENİ HAMMADDE SİPARİŞ ROTASI ---
 router.post('/purchase', async (req, res) => {
-    // 1. Frontend'den gelen veriyi konsola yaz (Hata ayıklamak için)
-    console.log("📥 Gelen Sipariş İsteği:", req.body);
 
     const { supplierId, employeeId, materialId, quantity, expectedDate } = req.body;
 
-    // 2. Veri Kontrolü
     if (!supplierId || !materialId || !quantity || !expectedDate) {
-        console.error("❌ Eksik Veri Hatası");
-        return res.status(400).send("Eksik bilgi: Lütfen tüm alanların doluluğunu kontrol edin.");
+        return res.status(400).send("There are missing fields.");
     }
 
     try {
         const pool = await sql.connect(config);
 
-        // 3. SQL Prosedürünü Çağır
-        // Buradaki input isimleri (SupplierID vb.) SQL'deki @SupplierID ile EŞLEŞMELİDİR.
         await pool.request()
             .input('SupplierID', sql.Int, supplierId)
-            .input('EmployeeID', sql.Int, employeeId || 1) // Eğer employeeId yoksa 1 (Admin) kullan
+            .input('EmployeeID', sql.Int, employeeId || 1)
             .input('MaterialID', sql.Int, materialId)
             .input('Quantity', sql.Int, quantity)
-            .input('ExpectedDate', sql.Date, expectedDate) // Tarih formatı YYYY-MM-DD olmalı
+            .input('ExpectedDate', sql.Date, expectedDate)
             .execute('sp_CreatePurchaseOrder');
-        
-        console.log("✅ Sipariş Veritabanına İşlendi.");
-        res.json({ message: 'Sipariş başarıyla oluşturuldu.' });
+
+        res.json({ message: 'Order created successfully.' });
 
     } catch (e) {
-        // 4. Hatanın asıl sebebini terminale yaz
-        console.error("🔥 SQL HATASI DETAYI:", e);
-        
-        // Frontend'e hatayı gönder
-        res.status(500).send("Sunucu Hatası: " + e.message);
+        res.status(500).send("Error: " + e.message);
     }
 });
+
+// LIST CUSTOMERS
 
 router.get('/customers', async (req, res) => {
   try {
@@ -293,11 +279,8 @@ router.get('/customers', async (req, res) => {
   }
 });
 
-/**
- * ✅ Customers - ADD (SP: sp_AddCustomer + optional Domestic/International)
- * Body:
- * { firstName, lastName, phoneNumber, email, address, customerType?, regionId?, countryId? }
- */
+// ADD CUSTOMER
+
 router.post('/customers/add', async (req, res) => {
   const {
     firstName, lastName, phoneNumber, email, address,
@@ -305,20 +288,18 @@ router.post('/customers/add', async (req, res) => {
   } = req.body;
 
   if (!firstName || !lastName || !phoneNumber || !email || !address || !customerType) {
-    return res.status(400).send('Eksik alan var.');
+    return res.status(400).send('There are missing fields.');
   }
 
   try {
     const pool = await sql.connect(config);
 
-    // 1) Customer ekle
     const insertCustomer = await pool.request()
       .input('FirstName', sql.NVarChar(50), firstName)
       .input('LastName', sql.NVarChar(50), lastName)
       .input('PhoneNumber', sql.NVarChar(20), phoneNumber)
       .input('Email', sql.NVarChar(100), email)
       .input('Address', sql.NVarChar(250), address)
-      // sp_AddCustomer New ID döndürmüyorsa aşağıdaki gibi SCOPE_IDENTITY eklemen iyi olur
       .query(`
         DECLARE @NewID INT;
         INSERT INTO Customer (FirstName, LastName, PhoneNumber, Email, Address)
@@ -328,11 +309,10 @@ router.post('/customers/add', async (req, res) => {
       `);
 
     const newCustomerId = insertCustomer.recordset?.[0]?.NewCustomerID;
-    if (!newCustomerId) throw new Error('NewCustomerID alınamadı.');
+    if (!newCustomerId) throw new Error('Customer creation failed.');
 
-    // 2) İsteğe bağlı: Domestic / International kaydı
     if (customerType === 'domestic') {
-      if (!regionId) return res.status(400).send('regionId zorunlu.');
+      if (!regionId) return res.status(400).send('The regionId is required.');
       await pool.request()
         .input('CustomerID', sql.Int, newCustomerId)
         .input('RegionID', sql.Int, regionId)
@@ -340,7 +320,7 @@ router.post('/customers/add', async (req, res) => {
     }
 
     if (customerType === 'international') {
-      if (!countryId) return res.status(400).send('countryId zorunlu.');
+      if (!countryId) return res.status(400).send('The countryId is required.');
       await pool.request()
         .input('CustomerID', sql.Int, newCustomerId)
         .input('CountryID', sql.Int, countryId)
@@ -353,12 +333,11 @@ router.post('/customers/add', async (req, res) => {
   }
 });
 
-/**
- * ✅ Customers - DELETE (SP: sp_DeleteCustomer)
- */
+// DELETE CUSTOMER
+
 router.post('/customers/delete', async (req, res) => {
   const { customerId } = req.body;
-  if (!customerId) return res.status(400).send('customerId zorunlu.');
+  if (!customerId) return res.status(400).send('The customerId is required.');
 
   try {
     const pool = await sql.connect(config);
@@ -371,5 +350,23 @@ router.post('/customers/delete', async (req, res) => {
     res.status(400).send(e.message);
   }
 });
+
+// RAW MATERIAL STOCK STATUS (from view)
+router.get('/raw-material-stock-status', async (req, res) => {
+  try {
+    const pool = await sql.connect(config);
+    const r = await pool.request().query(`
+      SELECT MaterialID, MaterialName, StockQuantity, SafetyStockLevel, StockStatus
+      FROM dbo.vRawMaterialStockStatus
+      ORDER BY
+        CASE WHEN StockStatus = 'REORDER REQUIRED' THEN 1 ELSE 2 END,
+        MaterialName;
+    `);
+    res.json(r.recordset);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
 
 module.exports = router;

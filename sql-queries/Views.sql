@@ -2,34 +2,6 @@
 USE OttoBagno;
 GO
 
--- VIEW-1
--- Sales By Customer Type
--- This view compares domestic and international sales by aggregating
--- order counts and revenue according to customer type.
-
-CREATE VIEW vSalesByCustomerType
-AS
-SELECT
-    CASE 
-        WHEN dc.CustomerID IS NOT NULL THEN 'Domestic'
-        WHEN ic.CustomerID IS NOT NULL THEN 'International'
-        ELSE 'Unknown'
-    END AS CustomerType,
-    COUNT(DISTINCT so.OrderID) AS OrderCount,
-    SUM(od.LineTotal) AS Revenue
-FROM SalesOrder so
-    JOIN OrderDetail od ON so.OrderID = od.OrderID
-    LEFT JOIN DomesticCustomer dc ON so.CustomerID = dc.CustomerID
-    LEFT JOIN InternationalCustomer ic ON so.CustomerID = ic.CustomerID
-WHERE so.OrderStatus <> 'Cancelled'
-GROUP BY
-    CASE 
-        WHEN dc.CustomerID IS NOT NULL THEN 'Domestic'
-        WHEN ic.CustomerID IS NOT NULL THEN 'International'
-        ELSE 'Unknown'
-    END;
-GO
-
 
 -- VIEW-2
 -- Sales Order Totals
@@ -63,7 +35,7 @@ SELECT
     p.StockQuantity,
     CASE
         WHEN StockQuantity = 0 THEN 'OUT OF STOCK'
-        WHEN StockQuantity < 100 THEN 'LOW STOCK'
+        WHEN StockQuantity < 10 THEN 'LOW STOCK'
         ELSE 'OK'
     END AS StockStatus
 FROM Product p;
@@ -88,46 +60,6 @@ SELECT
 FROM RawMaterial rm;
 GO
 
--- VIEW-5
--- Purchase Order Summary
--- This view summarizes each purchase order by calculating its total amount and
--- number of items using aggregated data from PurchaseOrderDetail and supplier information.
-
-CREATE VIEW vPurchaseOrderSummary
-AS
-SELECT
-    po.PurchaseOrderID,
-    po.OrderDate,
-    po.OrderStatus,
-    s.CompanyName AS SupplierName,
-    SUM(pod.LineTotal) AS TotalAmount,
-    COUNT(pod.PurchaseOrderDetailID) AS ItemCount
-FROM PurchaseOrder po
-    LEFT JOIN PurchaseOrderDetail pod ON po.PurchaseOrderID = pod.PurchaseOrderID
-    INNER JOIN Supplier s ON po.SupplierID = s.SupplierID
-GROUP BY po.PurchaseOrderID, po.OrderDate, po.OrderStatus, s.CompanyName;
-GO
-
--- VIEW-6
--- Order Payment Status
--- This view determines the payment status of each sales order by comparing the
--- total order amount with the sum of payments made for that order.
-
-CREATE VIEW vOrderPaymentStatus
-AS
-SELECT
-    so.OrderID,
-    SUM(p.Amount) AS PaidAmount,
-    so.TotalAmount,
-    CASE
-        WHEN SUM(p.Amount) >= so.TotalAmount THEN 'Paid'
-        WHEN SUM(p.Amount) > 0 THEN 'Partially Paid'
-        ELSE 'Unpaid'
-    END AS PaymentStatus
-FROM SalesOrder so
-    LEFT JOIN Payment p ON so.OrderID = p.OrderID
-GROUP BY so.OrderID, so.TotalAmount;
-GO
 
 -- VIEW-7
 -- Best Selling Products
@@ -148,22 +80,4 @@ WHERE so.OrderStatus <> 'Cancelled'
 GROUP BY p.ProductCode, p.ProductName;
 GO
 
--- VIEW-8
--- Supplier Purchase Summary
--- This view summarizes purchasing activity by calculating total purchase
--- orders and spending amounts for each supplier.
-
-CREATE VIEW vSupplierPurchaseSummary
-AS
-SELECT
-    s.SupplierID,
-    s.CompanyName,
-    COUNT(DISTINCT po.PurchaseOrderID) AS PurchaseOrderCount,
-    SUM(pod.LineTotal) AS TotalPurchasedAmount
-FROM Supplier s
-    LEFT JOIN PurchaseOrder po ON s.SupplierID = po.SupplierID
-    LEFT JOIN PurchaseOrderDetail pod ON po.PurchaseOrderID = pod.PurchaseOrderID
-WHERE po.PurchaseOrderID IS NOT NULL
-GROUP BY s.SupplierID, s.CompanyName;
-GO
 

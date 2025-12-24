@@ -2,30 +2,22 @@ const express = require('express');
 const router = express.Router();
 const { sql, config } = require('../db');
 
-/* -------------------------------------------------- */
-/* Helper functions                                  */
-/* -------------------------------------------------- */
-
 function extractSqlMessage(err) {
   return (
     err?.originalError?.info?.message ||
     err?.originalError?.message ||
     err?.message ||
-    'Sipariş oluşturulamadı.'
+    'Order creation failed.'
   );
 }
 
-/* -------------------------------------------------- */
-/* CHECKOUT + PAYMENT (TEK TRANSACTION)               */
-/* -------------------------------------------------- */
+// CHECKOUT & PAY
 
 router.post('/checkout-pay', async (req, res) => {
   const { customerId, usedCurrency, countryId, paymentMethod, items } = req.body;
 
   if (!customerId || !countryId || !usedCurrency || !paymentMethod) {
-    return res.status(400).send(
-      'CustomerID / CountryID / Currency / PaymentMethod zorunlu.'
-    );
+    return res.status(400).send('There are missing fields.');
   }
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -39,14 +31,12 @@ router.post('/checkout-pay', async (req, res) => {
     await tx.begin();
 
     try {
-      /* 1️⃣ Random employee seç */
       const empResult = await new sql.Request(tx)
         .execute('sp_GetRandomEmployee');
 
       const salesEmployeeId = empResult.recordset?.[0]?.EmployeeID;
-      if (!salesEmployeeId) throw new Error('Employee bulunamadı.');
+      if (!salesEmployeeId) throw new Error('No sales employee available.');
 
-      /* 2️⃣ SalesOrder oluştur */
       const orderResult = await new sql.Request(tx)
         .input('CustomerID', sql.Int, customerId)
         .input('SalesEmployeeID', sql.Int, salesEmployeeId)
@@ -55,8 +45,8 @@ router.post('/checkout-pay', async (req, res) => {
         .execute('sp_CreateSalesOrder');
 
       const newOrderId = orderResult.recordset[0].NewOrderID;
+      if (!newOrderId) throw new Error('Order creation failed.');
 
-      /* 3️⃣ OrderDetail (stok trigger burada çalışır) */
       for (const it of items) {
         await new sql.Request(tx)
           .input('OrderID', sql.Int, newOrderId)
@@ -66,19 +56,16 @@ router.post('/checkout-pay', async (req, res) => {
           .execute('sp_AddOrderDetail');
       }
 
-      /* 4️⃣ Total hesapla */
       await new sql.Request(tx)
         .input('OrderID', sql.Int, newOrderId)
         .execute('sp_RecalculateSalesOrderTotal');
 
-      /* 5️⃣ TotalAmount çek */
       const totalRes = await new sql.Request(tx)
         .input('OrderID', sql.Int, newOrderId)
         .execute('sp_GetOrderTotal');
 
       const totalAmount = totalRes.recordset[0].TotalAmount;
 
-      /* 6️⃣ Payment ekle */
       await new sql.Request(tx)
         .input('OrderID', sql.Int, newOrderId)
         .input('PaymentMethod', sql.NVarChar(30), paymentMethod)
@@ -90,7 +77,7 @@ router.post('/checkout-pay', async (req, res) => {
       return res.json({
         orderId: newOrderId,
         totalAmount,
-        message: 'Ödeme alındı ve sipariş oluşturuldu.'
+        message: 'Order placed successfully.'
       });
 
     } catch (errInside) {
@@ -99,7 +86,7 @@ router.post('/checkout-pay', async (req, res) => {
       const msg = extractSqlMessage(errInside);
 
       if (msg.toLowerCase().includes('yetersiz')) {
-        return res.status(400).send('Yetersiz stok.');
+        return res.status(400).send('Out of stock!');
       }
 
       return res.status(400).send(msg);
@@ -110,14 +97,13 @@ router.post('/checkout-pay', async (req, res) => {
   }
 });
 
-// ... Mevcut kodların arasına ekle ...
+// LIST ORDERS
 
-// Müşterinin kendi siparişlerini getir
 router.get('/my-orders', async (req, res) => {
     const { customerId } = req.query;
 
     if (!customerId) {
-        return res.status(400).send('CustomerID gerekli.');
+        return res.status(400).send('The customerId is required.');
     }
 
     try {
@@ -129,10 +115,12 @@ router.get('/my-orders', async (req, res) => {
         res.json(result.recordset);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Siparişler getirilemedi: ' + err.message);
+        res.status(500).send('Orders not retrieved: ' + err.message);
     }
 });
-// Sipariş detaylarını getir
+
+// ORDER DETAILS
+
 router.get('/details/:orderId', async (req, res) => {
     const { orderId } = req.params;
 
@@ -145,9 +133,8 @@ router.get('/details/:orderId', async (req, res) => {
         res.json(result.recordset);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Detaylar getirilemedi.');
+        res.status(500).send('Order details not retrieved: ' + err.message);
     }
 });
-/* -------------------------------------------------- */
 
 module.exports = router;

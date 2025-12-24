@@ -7,16 +7,17 @@ function extractSqlMessage(err) {
     err?.originalError?.info?.message ||
     err?.originalError?.message ||
     err?.message ||
-    'Ödeme alınamadı.'
+    'Payment operation failed.'
   );
 }
 
-// Ödeme ekle
+// PAYMENT FOR AN ORDER
+
 router.post('/pay', async (req, res) => {
   const { orderId, paymentMethod, amount } = req.body;
 
   if (!orderId || !paymentMethod || amount == null) {
-    return res.status(400).send('orderId / paymentMethod / amount zorunlu.');
+    return res.status(400).send('There are missing fields.');
   }
 
   try {
@@ -28,13 +29,12 @@ router.post('/pay', async (req, res) => {
       .input('Amount', sql.Decimal(12, 2), Number(amount))
       .execute('sp_AddPayment');
 
-    // (Opsiyonel) ödeme sonrası order durumunu göstermek için çekelim
     const statusResult = await pool.request()
       .input('OrderID', sql.Int, parseInt(orderId))
       .execute('sp_GetSalesOrderStatus');
 
     res.json({
-      message: 'Ödeme kaydedildi.',
+      message: 'Payment saved.',
       order: statusResult.recordset?.[0] || null
     });
   } catch (e) {

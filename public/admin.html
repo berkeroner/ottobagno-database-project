@@ -177,6 +177,34 @@
               </table>
             </div>
           </div>
+
+          <hr class="my-4">
+
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="mb-0">Raw Material Stock Status</h5>
+            <button class="btn btn-sm btn-outline-primary" onclick="adminLoadRawMaterialStockStatus()">
+              Refresh
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th style="width:90px;">ID</th>
+                  <th>Material</th>
+                  <th style="width:140px;">Stock</th>
+                  <th style="width:160px;">Safety Stock</th>
+                  <th style="width:180px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="rawMatStockList">
+                <tr><td colspan="5">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+
         </div>
       </div>
 
@@ -273,7 +301,7 @@
               <thead class="table-light sticky-top">
                 <tr>
                   <th>Code</th><th>Name</th><th>Price</th><th>Price with VAT</th><th>Color</th>
-                  <th>Stock</th><th>Class</th><th>Collection</th><th>Action</th>
+                  <th>Stock</th><th>Class</th><th>Collection</th><th>Status</th>
                 </tr>
               </thead>
               <tbody id="productList"></tbody>

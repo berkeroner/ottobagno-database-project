@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { sql, config } = require('../db');
 
-// GET /api/products/classes
+// LIST PRODUCT CLASSES
+
 router.get('/classes', async (req, res) => {
   try {
     const pool = await sql.connect(config);
@@ -13,7 +14,8 @@ router.get('/classes', async (req, res) => {
   }
 });
 
-// GET /api/products/collections
+// LIST PRODUCT COLLECTIONS
+
 router.get('/collections', async (req, res) => {
   try {
     const pool = await sql.connect(config);
@@ -24,7 +26,9 @@ router.get('/collections', async (req, res) => {
   }
 });
 
-// GET /api/products/filtered?classId=1&collectionId=2
+
+// LIST FILTERED PRODUCTS
+
 router.get('/filtered', async (req, res) => {
   const classId = req.query.classId ? parseInt(req.query.classId) : null;
   const collectionId = req.query.collectionId ? parseInt(req.query.collectionId) : null;
@@ -42,5 +46,27 @@ router.get('/filtered', async (req, res) => {
     res.status(500).send(e.message);
   }
 });
+
+// BEST SELLING PRODUCTS (from dbo.vBestSellingProducts)
+router.get('/best-sellers', async (req, res) => {
+  try {
+    const pool = await sql.connect(config);
+
+    const r = await pool.request().query(`
+      SELECT TOP 3
+        ProductCode,
+        ProductName,
+        TotalQtySold
+      FROM dbo.vBestSellingProducts
+      ORDER BY TotalQtySold DESC;
+    `);
+
+    res.json(r.recordset);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+
 
 module.exports = router;
