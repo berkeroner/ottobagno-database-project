@@ -58,18 +58,21 @@ GO
 -- This stored procedure creates a new sales order for a customer
 -- and returns the generated order identifier.
 
-CREATE PROCEDURE sp_CreateSalesOrder
-    @CustomerID INT,
-    @SalesEmployeeID INT,
-    @UsedCurrency CHAR(3)
+CREATE PROCEDURE [dbo].[sp_CreateSalesOrder]
+  @CustomerID INT,
+  @SalesEmployeeID INT,
+  @UsedCurrency CHAR(3),
+  @CountryID INT
 AS
 BEGIN
-    INSERT INTO SalesOrder (CustomerID, SalesEmployeeID, UsedCurrency)
-    VALUES (@CustomerID, @SalesEmployeeID, @UsedCurrency);
+  SET NOCOUNT ON;
+  INSERT INTO SalesOrder (CustomerID, SalesEmployeeID, UsedCurrency, CountryID)
+  VALUES (@CustomerID, @SalesEmployeeID, @UsedCurrency, @CountryID);
 
-    SELECT SCOPE_IDENTITY() AS NewOrderID;
-END;
+  SELECT SCOPE_IDENTITY() AS NewOrderID;
+END
 GO
+
 
 
 -- SP-5

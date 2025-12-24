@@ -7,31 +7,6 @@ GO
 -- This trigger automatically updates product stock levels after
 -- a sales transaction and prevents negative inventory quantities.
 
-CREATE TRIGGER trg_DecreaseProductStock
-ON OrderDetail
-AFTER INSERT
-
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    UPDATE p
-    SET p.StockQuantity = p.StockQuantity - i.Quantity
-    FROM Product p
-    JOIN inserted i ON i.ProductCode = p.ProductCode;
-
-    IF EXISTS (
-        SELECT 1
-        FROM Product
-        WHERE StockQuantity < 0
-    )
-
-    BEGIN
-        RAISERROR ('Insufficient product stock.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END
-END;
-GO
 
 
 -- TRIGGER-2,3
@@ -103,4 +78,46 @@ BEGIN
     ) p ON so.OrderID = p.OrderID
     WHERE p.TotalPaid >= so.TotalAmount;
 END;
+GO
+
+CREATE OR ALTER  TRIGGER [dbo].[trg_OrderDetail_StockManager]
+ON [dbo].[OrderDetail]
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @StockChanges TABLE (ProductCode NVARCHAR(20), Delta INT);
+
+    INSERT INTO @StockChanges (ProductCode, Delta)
+    SELECT 
+        ISNULL(n.ProductCode, o.ProductCode) AS ProductCode,
+        ISNULL(o.Qty, 0) - ISNULL(n.Qty, 0) AS Delta
+    FROM 
+        (SELECT ProductCode, SUM(Quantity) AS Qty FROM deleted GROUP BY ProductCode) o
+    FULL OUTER JOIN 
+        (SELECT ProductCode, SUM(Quantity) AS Qty FROM inserted GROUP BY ProductCode) n 
+        ON o.ProductCode = n.ProductCode;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM @StockChanges sc
+        JOIN dbo.Product p ON p.ProductCode = sc.ProductCode
+        WHERE p.StockQuantity + sc.Delta < 0
+    )
+    BEGIN
+
+        THROW 51000, N'Out of stock!', 1;
+        RETURN;
+    END
+
+    UPDATE p
+    SET p.StockQuantity = p.StockQuantity + sc.Delta
+    FROM dbo.Product p
+    JOIN @StockChanges sc ON p.ProductCode = sc.ProductCode
+    WHERE sc.Delta <> 0;
+
+END;
+GO
+ALTER TABLE [dbo].[OrderDetail] ENABLE TRIGGER [trg_OrderDetail_StockManager]
 GO
