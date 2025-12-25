@@ -45,12 +45,6 @@
     <ul class="nav nav-tabs" id="adminTabs" role="tablist">
 
       <li class="nav-item">
-        <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders-pane" type="button">
-          Orders
-        </button>
-      </li>
-
-      <li class="nav-item">
         <button class="nav-link" id="allorders-tab" data-bs-toggle="tab" data-bs-target="#allorders-pane" type="button">
           All Sales History
         </button>
@@ -90,22 +84,6 @@
     </ul>
 
     <div class="tab-content bg-white border border-top-0 p-3 shadow-sm" id="myTabContent">
-
-      <!-- ===================== ORDERS ===================== -->
-      <div class="tab-pane fade show active" id="orders-pane">
-        <div class="d-flex justify-content-between mb-3">
-          <h5>Recent Orders</h5>
-          <button id="btnOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
-        </div>
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-          <table class="table table-striped table-hover table-sm text-center">
-            <thead class="table-dark sticky-top">
-              <tr><th>ID</th><th>Customer ID</th><th>Status</th><th>Total</th><th>Date</th></tr>
-            </thead>
-            <tbody id="orderList"></tbody>
-          </table>
-        </div>
-      </div>
 
       <!-- ===================== ALL SALES HISTORY ===================== -->
       <div class="tab-pane fade" id="allorders-pane">
@@ -456,13 +434,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="app.js"></script>
-<script>
-  // Sayfa yüklendiğinde Admin fonksiyonlarını başlat
-  if (typeof initAdminPage === 'function') {
-    initAdminPage();
-  }
-</script>
 
-</body>
-</html>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="app.js"></script>

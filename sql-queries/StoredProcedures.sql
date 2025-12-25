@@ -691,3 +691,21 @@ BEGIN
 END;
 GO
 
+CREATE PROCEDURE sp_RecalculatePurchaseOrderTotal
+  @PurchaseOrderID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM PurchaseOrder WHERE PurchaseOrderID=@PurchaseOrderID)
+    THROW 50210, 'Purchase order not found.', 1;
+
+  UPDATE PurchaseOrder
+  SET TotalAmount = ISNULL((
+    SELECT SUM(LineTotal)
+    FROM PurchaseOrderDetail
+    WHERE PurchaseOrderID = @PurchaseOrderID
+  ), 0)
+  WHERE PurchaseOrderID = @PurchaseOrderID;
+END
+GO
