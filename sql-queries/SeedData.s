@@ -2,8 +2,7 @@ USE OttoBagno;
 GO
 
 -- =============================================================
--- 1. TEMİZLİK (DELETE)
--- Hiyerarşik sırayla temizlik.
+-- Cleaning
 -- =============================================================
 
 DELETE FROM dbo.ProductionTracking;
@@ -32,15 +31,8 @@ DELETE FROM dbo.DomesticRegion;
 DELETE FROM dbo.Country;
 
 GO
-
--- =============================================================
--- 2. GARANTİLİ VERİ GİRİŞİ (IDENTITY_INSERT YÖNTEMİ)
--- Artık SQL Server'ın otomatik sayı vermesini beklemiyoruz.
--- ID'leri biz veriyoruz (1, 2, 3...) böylece kayma şansı %0.
--- =============================================================
-
 -- ---------------------------------------------------------
--- TABLO: COUNTRY
+-- TABLE: COUNTRY
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.Country ON;
 INSERT INTO Country (CountryID, CountryName, CurrencyCode, ShippingZone) VALUES
@@ -77,7 +69,7 @@ INSERT INTO Country (CountryID, CountryName, CurrencyCode, ShippingZone) VALUES
 SET IDENTITY_INSERT dbo.Country OFF;
 
 -- ---------------------------------------------------------
--- TABLO: DOMESTIC REGION
+-- TABLE: DOMESTIC REGION
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.DomesticRegion ON;
 INSERT INTO DomesticRegion (RegionID, RegionName, ShippingCostMultiplier) VALUES
@@ -91,7 +83,7 @@ INSERT INTO DomesticRegion (RegionID, RegionName, ShippingCostMultiplier) VALUES
 SET IDENTITY_INSERT dbo.DomesticRegion OFF;
 
 -- ---------------------------------------------------------
--- TABLO: PRODUCT CLASS
+-- TABLE: PRODUCT CLASS
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.ProductClass ON;
 INSERT INTO ProductClass (ClassID, ClassName, SubClassName) VALUES
@@ -113,7 +105,7 @@ INSERT INTO ProductClass (ClassID, ClassName, SubClassName) VALUES
 SET IDENTITY_INSERT dbo.ProductClass OFF;
 
 -- ---------------------------------------------------------
--- TABLO: PRODUCT COLLECTION
+-- TABLE: PRODUCT COLLECTION
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.ProductCollection ON;
 INSERT INTO ProductCollection (CollectionID, CollectionName) VALUES
@@ -134,7 +126,7 @@ INSERT INTO ProductCollection (CollectionID, CollectionName) VALUES
 SET IDENTITY_INSERT dbo.ProductCollection OFF;
 
 -- ---------------------------------------------------------
--- TABLO: PRODUCTION STEP
+-- TABLE: PRODUCTION STEP
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.ProductionStep ON;
 INSERT INTO ProductionStep (StepID, StepName) VALUES
@@ -149,7 +141,7 @@ INSERT INTO ProductionStep (StepID, StepName) VALUES
 SET IDENTITY_INSERT dbo.ProductionStep OFF;
 
 -- ---------------------------------------------------------
--- TABLO: EMPLOYEE
+-- TABLE: EMPLOYEE
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.Employee ON;
 INSERT INTO Employee (EmployeeID, FirstName, LastName, Role, PhoneNumber, Email) VALUES
@@ -184,7 +176,7 @@ INSERT INTO Employee (EmployeeID, FirstName, LastName, Role, PhoneNumber, Email)
 SET IDENTITY_INSERT dbo.Employee OFF;
 
 -- ---------------------------------------------------------
--- TABLO: SUPPLIER
+-- TABLE: SUPPLIER
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.Supplier ON;
 INSERT INTO Supplier (SupplierID, CompanyName, ContactPerson, PhoneNumber, Email, Address) VALUES
@@ -218,7 +210,7 @@ INSERT INTO Supplier (SupplierID, CompanyName, ContactPerson, PhoneNumber, Email
 SET IDENTITY_INSERT dbo.Supplier OFF;
 
 -- ---------------------------------------------------------
--- TABLO: CUSTOMER (50 Adet - Manuel ID)
+-- TABLE: CUSTOMER
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.Customer ON;
 INSERT INTO Customer (CustomerID, FirstName, LastName, PhoneNumber, Email, Address) VALUES
@@ -275,8 +267,7 @@ INSERT INTO Customer (CustomerID, FirstName, LastName, PhoneNumber, Email, Addre
 SET IDENTITY_INSERT dbo.Customer OFF;
 
 -- ---------------------------------------------------------
--- TABLO: DOMESTIC/INTERNATIONAL CUSTOMER BAĞLANTILARI
--- (Artık ID 1 kesinlikle Ali Kara olduğu için bu kısım hata vermez)
+-- TABLO: DOMESTIC/INTERNATIONAL CUSTOMER CONNECTIONS
 -- ---------------------------------------------------------
 INSERT INTO DomesticCustomer (CustomerID, RegionID) VALUES
 (1,1),(2,2),(3,3),(4,4),(5,5),
@@ -294,7 +285,7 @@ INSERT INTO InternationalCustomer (CustomerID, CountryID) VALUES
 (46,6),(47,6),(48,10),(49,29),(50,9);
 
 -- ---------------------------------------------------------
--- TABLO: PRODUCTS (ProductCode PK olduğu için Identity yok, Normal Insert)
+-- TABLE: PRODUCTS
 -- ---------------------------------------------------------
 INSERT INTO Product (ProductCode, ProductName, SalesPrice, Color, StockQuantity, ClassID, CollectionID) VALUES
 ('P001','Sink A',1200,'White',50,1,1),
@@ -344,7 +335,7 @@ INSERT INTO Product (ProductCode, ProductName, SalesPrice, Color, StockQuantity,
 ('P045','Massage Bathtub',7000,'White',3,6,5);
 
 -- ---------------------------------------------------------
--- TABLO: RAW MATERIAL
+-- TABLE: RAW MATERIAL
 -- ---------------------------------------------------------
 SET IDENTITY_INSERT dbo.RawMaterial ON;
 INSERT INTO RawMaterial (MaterialID, MaterialName, UnitPrice, StockQuantity, SafetyStockLevel) VALUES
@@ -386,7 +377,7 @@ INSERT INTO RawMaterial (MaterialID, MaterialName, UnitPrice, StockQuantity, Saf
 SET IDENTITY_INSERT dbo.RawMaterial OFF;
 
 -- ---------------------------------------------------------
--- TABLO: MATERIAL SUPPLIER (FK Hatası Çözümü için MaterialID 1..35 sabitlendi)
+-- TABLE: MATERIAL SUPPLIER
 -- ---------------------------------------------------------
 INSERT INTO MaterialSupplier (SupplierProductCode, LeadTimeDays, MaterialID, SupplierID) VALUES
 ('ST-01',7,1,1),('GL-01',5,2,2),('CE-01',6,3,3),
@@ -408,7 +399,7 @@ INSERT INTO MaterialSupplier (SupplierProductCode, LeadTimeDays, MaterialID, Sup
 ('CD-01',2,34,15), ('RS-01',6,35,11);
 
 -- ---------------------------------------------------------
--- TABLO: BILL OF MATERIALS
+-- TABLE: BILL OF MATERIALS
 -- ---------------------------------------------------------
 INSERT INTO BillOfMaterials (ProductCode, MaterialID, RequiredQuantity) VALUES
 ('P001',1,2),('P001',5,1), ('P002',1,2),('P002',6,1), ('P003',3,3),('P003',5,1),

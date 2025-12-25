@@ -2,11 +2,11 @@ USE OttoBagno;
 GO
 
 -- =============================================================
--- ÖNCELİKLİ YARDIMCI PROSEDÜRLER (Hata almamak için en başa alındı)
+-- PRIORITY HELPER PROCEDURES (Moved to the top to prevent errors)
 -- =============================================================
 
 -- SP-RecalcPurchase (Helper)
--- Satın alma siparişinin toplamını hesaplar.
+-- Calculates the total of the purchase order.
 CREATE OR ALTER PROCEDURE sp_RecalculatePurchaseOrderTotal
   @PurchaseOrderID INT
 AS
@@ -27,7 +27,7 @@ END
 GO
 
 -- SP-22 — Recalculate Sales Order Total
--- Satış siparişinin toplamını hesaplar.
+-- Calculates the total of the sales order.
 CREATE OR ALTER PROCEDURE sp_RecalculateSalesOrderTotal
     @OrderID INT
 AS
@@ -49,7 +49,7 @@ END
 GO
 
 -- =============================================================
--- MÜŞTERİ İŞLEMLERİ (CUSTOMER)
+-- CUSTOMER OPERATIONS
 -- =============================================================
 
 -- SP-2 — Add Domestic Customer
@@ -137,7 +137,7 @@ END;
 GO
 
 -- =============================================================
--- SATIŞ SİPARİŞİ İŞLEMLERİ (SALES ORDER)
+-- SALES ORDER OPERATIONS
 -- =============================================================
 
 -- SP-4 — Create Sales Order
@@ -186,7 +186,7 @@ CREATE OR ALTER PROCEDURE sp_GetCustomerOrders
     @CustomerID INT
 AS
 BEGIN
-    -- vSalesOrderTotals view'unun oluşturulduğunu varsayar
+    -- Assumes vSalesOrderTotals view is created
     SELECT *
     FROM vSalesOrderTotals
     WHERE CustomerID = @CustomerID;
@@ -246,7 +246,7 @@ END;
 GO
 
 -- =============================================================
--- ÜRÜN İŞLEMLERİ (PRODUCT)
+-- PRODUCT OPERATIONS
 -- =============================================================
 
 -- SP-12 — List Products
@@ -362,7 +362,7 @@ END;
 GO
 
 -- =============================================================
--- ÇALIŞAN İŞLEMLERİ (EMPLOYEE)
+-- EMPLOYEE OPERATIONS
 -- =============================================================
 
 -- SP-26 — List Employees
@@ -416,7 +416,7 @@ END
 GO
 
 -- =============================================================
--- SATIN ALMA VE ÜRETİM (PURCHASE & PRODUCTION)
+-- PURCHASE & PRODUCTION
 -- =============================================================
 
 -- SP-7 — Create Purchase Order
@@ -483,8 +483,8 @@ END
 GO
 
 -- SP-39 — Add Purchase Order Detail and Recalculate
--- NOT: Bu prosedür sp_RecalculatePurchaseOrderTotal'ı kullandığı için 
--- o prosedürün yukarıda tanımlanmış olması gerekir (Bu scriptte düzeltilmiştir).
+-- NOTE: Since this procedure uses sp_RecalculatePurchaseOrderTotal, 
+-- that procedure must be defined above (Fixed in this script).
 CREATE OR ALTER PROCEDURE sp_AddPurchaseOrderDetailAndRecalc
   @PurchaseOrderID INT,
   @MaterialID INT,
@@ -523,7 +523,7 @@ BEGIN
               AND (BOM.RequiredQuantity * @ProductionQty) > RM.StockQuantity
         )
         BEGIN
-            THROW 51000, 'Yetersiz Hammadde Stoğu! Üretim yapılamaz.', 1;
+            THROW 51000, 'Insufficient Raw Material Stock! Production cannot be performed.', 1;
         END
 
         UPDATE RM
@@ -537,7 +537,7 @@ BEGIN
         WHERE ProductCode = @ProductCode;
 
         COMMIT TRANSACTION;
-        SELECT 'Başarılı' as Status, @ProductionQty as ProducedQty;
+        SELECT 'Success' as Status, @ProductionQty as ProducedQty;
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION;
