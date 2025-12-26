@@ -67,8 +67,6 @@ BEGIN
 
 END;
 GO
-ALTER TABLE [dbo].[OrderDetail] ENABLE TRIGGER [trg_OrderDetail_StockManager]
-GO
 
 
 

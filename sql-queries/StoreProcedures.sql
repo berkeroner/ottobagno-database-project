@@ -95,8 +95,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT *
-    FROM dbo.vSalesOrderTotals
+    SELECT 
+        OrderID, 
+        OrderDate, 
+        OrderStatus, 
+        TotalAmount AS CalculatedTotal, 
+        UsedCurrency
+    FROM dbo.SalesOrder
     WHERE CustomerID = @CustomerID
     ORDER BY OrderDate DESC, OrderID DESC;
 END;
@@ -983,7 +988,7 @@ GO
 
 -- SP-42
 
-        CREATE PROCEDURE sp_AddCustomer
+        CREATE OR ALTER PROCEDURE sp_AddCustomer
             @FirstName NVARCHAR(50),
             @LastName NVARCHAR(50),
             @PhoneNumber NVARCHAR(20),
@@ -993,5 +998,7 @@ GO
         BEGIN
         INSERT INTO Customer (FirstName, LastName, PhoneNumber, Email, Address)
         VALUES (@FirstName, @LastName, @PhoneNumber, @Email, @Address);
+        
+        SELECT SCOPE_IDENTITY() AS NewID;
         END;
         GO
