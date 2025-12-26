@@ -26,5 +26,6 @@
   "bugs": {
     "url": "https://github.com/berkeroner/ottobagno-database-project/issues"
   },
-  "homepage": "https://github.com/berkeroner/ottobagno-database-project#readme"
+  "homepage": "https://github.com/berkeroner/ottobagno-database-project#readme",
+  "devDependencies": {}
 }

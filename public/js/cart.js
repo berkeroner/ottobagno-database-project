@@ -83,7 +83,7 @@ function addToCart(product) {
   if (qtyInput) qtyInput.value = 1;
 }
 
-/* ----- Cart Page Render ----- */
+// Cart page init
 function initCartPage() {
   updateCartUI();
 

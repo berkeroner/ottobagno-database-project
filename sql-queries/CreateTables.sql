@@ -1,7 +1,4 @@
 
-USE OttoBagno;
-GO
-
 CREATE TABLE Country (
     CountryID        INT IDENTITY(1,1) PRIMARY KEY,
     CountryName      NVARCHAR(100) NOT NULL,
@@ -40,8 +37,7 @@ CREATE TABLE Employee (
     LastName       NVARCHAR(50) NOT NULL,
     Role           NVARCHAR(50) NOT NULL,
     PhoneNumber    NVARCHAR(20) NOT NULL,
-    Email          NVARCHAR(250) NOT NULL UNIQUE,
-    IsActive       BIT NOT NULL DEFAULT (1)
+    Email          NVARCHAR(250) NOT NULL UNIQUE
 )
 
 CREATE TABLE Customer (
@@ -177,7 +173,7 @@ CREATE TABLE PurchaseOrder (
     OrderStatus             NVARCHAR(20) NOT NULL DEFAULT ('New'),
     TotalAmount             DECIMAL(12,2) NOT NULL DEFAULT (0),
     SupplierID              INT NOT NULL,
-    ResponsibleEmployeeID   INT NOT NULL,
+    ResponsibleEmployeeID   INT NULL,
     FOREIGN KEY (SupplierID) REFERENCES Supplier(SupplierID),
     FOREIGN KEY (ResponsibleEmployeeID) REFERENCES Employee(EmployeeID),
     CONSTRAINT CK_PurchaseOrder_Status CHECK (OrderStatus IN ('New','Ordered','Received','Cancelled'))
@@ -203,7 +199,7 @@ CREATE TABLE ProductionOrder (
     StartDate              DATE NOT NULL DEFAULT (CONVERT(date, SYSDATETIME())),
     ProductionStatus       NVARCHAR(20) NOT NULL DEFAULT ('Planned'),
     ProductCode            NVARCHAR(20) NOT NULL,
-    ResponsibleEmployeeID  INT NOT NULL,
+    ResponsibleEmployeeID  INT NULL,
     FOREIGN KEY (ProductCode) REFERENCES Product(ProductCode),
     FOREIGN KEY (ResponsibleEmployeeID) REFERENCES Employee(EmployeeID),
     CONSTRAINT CK_ProductionOrder_Qty CHECK (Quantity > 0),

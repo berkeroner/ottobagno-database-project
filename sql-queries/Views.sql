@@ -1,9 +1,6 @@
 
-USE OttoBagno;
-GO
 
-
--- VIEW-2
+-- VIEW-1
 -- Sales Order Totals
 -- This view calculates the total order amount and total number of items
 -- per sales order by aggregating order detail records.
@@ -22,7 +19,7 @@ FROM SalesOrder so
 GROUP BY so.OrderID, so.OrderDate, so.OrderStatus, so.CustomerID;
 GO
 
--- VIEW-3
+-- VIEW-2
 -- Product Stock Status
 -- This view categorizes product inventory quantities according
 -- to business critical situations.
@@ -41,7 +38,7 @@ SELECT
 FROM Product p;
 GO
 
--- VIEW-4
+-- VIEW-3
 -- Raw Material Stock Status
 -- This view monitors raw material inventory levels and identifies materials
 -- that require replenishment based on safety stock thresholds.
@@ -61,7 +58,7 @@ FROM RawMaterial rm;
 GO
 
 
--- VIEW-7
+-- VIEW-4
 -- Best Selling Products
 -- This view identifies best-selling products by calculating total quantities
 -- sold and total revenue based on sales order details.

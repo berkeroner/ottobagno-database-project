@@ -20,7 +20,7 @@ async function initCatalogPage() {
   await loadFilteredProducts();
 }
 
-/* ----------------- Filters ----------------- */
+// Load filters
 async function loadFilters() {
   const classSelect = $('classSelect');
   const collectionSelect = $('collectionSelect');
@@ -60,7 +60,7 @@ async function loadFilters() {
   }
 }
 
-/* ----------------- Products ----------------- */
+// Load filtered products
 async function loadFilteredProducts() {
   const container = $('products');
   if (!container) return;
@@ -142,7 +142,7 @@ async function loadFilteredProducts() {
   }
 }
 
-/* ----------------- Best Sellers ----------------- */
+// Render best sellers
 function renderBestSellers(items) {
   const el = $('bestSellers');
   if (!el) return;

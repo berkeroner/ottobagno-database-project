@@ -24,10 +24,11 @@ function logout() {
 async function login() {
   const firstName = $('firstName')?.value.trim();
   const lastName = $('lastName')?.value.trim();
+  const email = $('email')?.value.trim();
   const msgEl = $('loginMsg');
 
-  if (!firstName || !lastName) {
-    if (msgEl) msgEl.innerText = 'Enter name and surname';
+  if (!firstName || !lastName || !email) {
+    if (msgEl) msgEl.innerText = 'Enter name, surname and email';
     return;
   }
 
@@ -48,7 +49,7 @@ async function login() {
     const res = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName })
+      body: JSON.stringify({ firstName, lastName, email })
     });
 
     if (!res.ok) {
@@ -72,7 +73,7 @@ function initLoginPage() {
   const btn = $('btnLogin');
   if (btn) btn.onclick = login;
 
-  // Enter tuşu ile login
+  // Login with enter
   const lastNameInput = $('lastName');
   if (lastNameInput) {
     lastNameInput.addEventListener('keydown', (e) => {

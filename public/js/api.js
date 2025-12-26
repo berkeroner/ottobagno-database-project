@@ -1,10 +1,9 @@
-// public/js/api.js
 
-// Kısa DOM helper
+// DOM helper
 const $ = (id) => document.getElementById(id);
 
-// API base (aynı origin için boş bırak)
-const API_BASE = ''; // prod: '' | local: 'http://localhost:3000'
+// API base
+const API_BASE = ''; // local: 'http://localhost:3000'
 
 // Low-level fetch
 async function apiFetch(url, options = {}) {
@@ -15,7 +14,6 @@ async function apiFetch(url, options = {}) {
   return res;
 }
 
-// JSON bekleyen istekler
 async function apiJson(url, options = {}) {
   const res = await apiFetch(url, options);
   if (!res.ok) {
@@ -25,7 +23,6 @@ async function apiJson(url, options = {}) {
   return res.json();
 }
 
-// Text/plain bekleyen istekler
 async function apiText(url, options = {}) {
   const res = await apiFetch(url, options);
   const txt = await res.text();
@@ -33,7 +30,6 @@ async function apiText(url, options = {}) {
   return txt;
 }
 
-// Güvenli JSON parse
 function safeJsonParse(str, fallback = null) {
   try {
     return JSON.parse(str);
@@ -42,7 +38,6 @@ function safeJsonParse(str, fallback = null) {
   }
 }
 
-/* --------- Global expose (önemli!) --------- */
 window.$ = $;
 window.apiFetch = apiFetch;
 window.apiJson = apiJson;

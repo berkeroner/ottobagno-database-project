@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,434 +10,581 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    body { background-color: #f4f6f9; }
+    body {
+      background-color: #f4f6f9;
+    }
+
     .nav-tabs .nav-link.active {
-        font-weight: bold;
-        color: #0d6efd;
-        border-top: 3px solid #0d6efd;
+      font-weight: bold;
+      color: #0d6efd;
+      border-top: 3px solid #0d6efd;
     }
   </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-dark bg-dark mb-4 shadow">
-  <div class="container-fluid px-4">
-    <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-user-shield"></i> Admin Panel</a>
-    <div class="d-flex align-items-center gap-3">
-      <a href="index.html" class="btn btn-outline-light btn-sm">
-        <i class="fa-solid fa-arrow-left"></i> Back to Catalog
-      </a>
-      <button onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
-    </div>
-  </div>
-</nav>
-
-<div class="container-fluid px-4">
-
-  <div class="alert alert-primary d-flex justify-content-between align-items-center shadow-sm" role="alert">
-    <div>
-      <i class="fa-solid fa-circle-user me-2"></i>
-      <span id="adminInfo" class="fw-bold">Loading...</span>
-    </div>
-    <div id="adminMsg" class="fw-bold text-danger"></div>
-  </div>
-
-  <div class="col-lg-12">
-    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-
-      <li class="nav-item">
-        <button class="nav-link" id="allorders-tab" data-bs-toggle="tab" data-bs-target="#allorders-pane" type="button">
-          All Sales History
-        </button>
-      </li>
-
-      <li class="nav-item">
-        <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase-pane" type="button">
-          Raw Material Purchase
-        </button>
-      </li>
-
-      <li class="nav-item">
-        <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-pane" type="button">
-          Production Management
-        </button>
-      </li>
-
-      <li class="nav-item">
-        <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
-          Product Management
-        </button>
-      </li>
-
-      <li class="nav-item">
-        <button class="nav-link" id="employees-tab" data-bs-toggle="tab" data-bs-target="#employees-pane" type="button">
-          Employee Management
-        </button>
-      </li>
-
-      <!-- ✅ NEW TAB: CUSTOMER MANAGEMENT -->
-      <li class="nav-item">
-        <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers-pane" type="button">
-          Customer Management
-        </button>
-      </li>
-
-    </ul>
-
-    <div class="tab-content bg-white border border-top-0 p-3 shadow-sm" id="myTabContent">
-
-      <!-- ===================== ALL SALES HISTORY ===================== -->
-      <div class="tab-pane fade" id="allorders-pane">
-        <div class="d-flex justify-content-between mb-3">
-          <h5>All Sales History</h5>
-          <button id="btnAllOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
-        </div>
-        <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
-          <table class="table table-striped table-hover table-sm text-center">
-            <thead class="table-dark sticky-top">
-              <tr>
-                <th>Order ID</th><th>Date</th><th>Status</th><th>Total</th><th>Currency</th>
-                <th>Customer ID</th><th>Employee ID</th><th>Country ID</th>
-              </tr>
-            </thead>
-            <tbody id="allOrderList"></tbody>
-          </table>
-        </div>
+  <nav class="navbar navbar-dark bg-dark mb-4 shadow">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-user-shield"></i> Admin Panel</a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="index.html" class="btn btn-outline-light btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+        </a>
+        <button onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
       </div>
+    </div>
+  </nav>
 
-      <!-- ===================== PURCHASE ===================== -->
-      <div class="tab-pane fade" id="purchase-pane">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="card shadow-sm border-0 bg-light">
-              <div class="card-header bg-success text-white fw-bold">Raw Material Purchase Form</div>
-              <div class="card-body">
-                <div class="mb-2">
-                  <label class="form-label small fw-bold">Supplier</label>
-                  <select class="form-select" id="supplierSelect"><option value="">Select...</option></select>
-                </div>
-                <div class="mb-2">
-                  <label class="form-label small fw-bold">Material</label>
-                  <select class="form-select" id="materialSelect"><option value="">Select...</option></select>
-                </div>
+  <div class="container-fluid px-4">
 
-                <div class="row g-2 mb-3">
-                  <div class="col">
-                    <label class="form-label small fw-bold">Quantity</label>
-                    <input id="pchQty" type="number" class="form-control" placeholder="Quantity">
+    <div class="alert alert-primary d-flex justify-content-between align-items-center shadow-sm" role="alert">
+      <div>
+        <i class="fa-solid fa-circle-user me-2"></i>
+        <span id="adminInfo" class="fw-bold">Loading...</span>
+      </div>
+      <div id="adminMsg" class="fw-bold text-danger"></div>
+    </div>
+
+    <div class="col-lg-12">
+      <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+
+        <li class="nav-item">
+          <button class="nav-link" id="allorders-tab" data-bs-toggle="tab" data-bs-target="#allorders-pane"
+            type="button">
+            All Sales History
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase-pane" type="button">
+            Raw Material Purchase
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-pane"
+            type="button">
+            Production Management
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
+            Product Management
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" id="employees-tab" data-bs-toggle="tab" data-bs-target="#employees-pane"
+            type="button">
+            Employee Management
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers-pane"
+            type="button">
+            Customer Management
+          </button>
+        </li>
+
+      </ul>
+
+      <div class="tab-content bg-white border border-top-0 p-3 shadow-sm" id="myTabContent">
+
+        <!-- All Sales History -->
+        <div class="tab-pane fade" id="allorders-pane">
+          <div class="d-flex justify-content-between mb-3">
+            <h5>All Sales History</h5>
+            <button id="btnAllOrders" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+            <table class="table table-striped table-hover table-sm text-center">
+              <thead class="table-dark sticky-top">
+                <tr>
+                  <th>Order ID</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Currency</th>
+                  <th>Customer ID</th>
+                  <th>Employee ID</th>
+                  <th>Country ID</th>
+                </tr>
+              </thead>
+              <tbody id="allOrderList"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Purchase -->
+        <div class="tab-pane fade" id="purchase-pane">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="card shadow-sm border-0 bg-light">
+                <div class="card-header bg-success text-white fw-bold">Raw Material Purchase Form</div>
+                <div class="card-body">
+                  <div class="mb-2">
+                    <label class="form-label small fw-bold">Supplier</label>
+                    <select class="form-select" id="supplierSelect">
+                      <option value="">Select...</option>
+                    </select>
                   </div>
-                  <div class="col">
-                    <label class="form-label small fw-bold">Delivery Date</label>
-                    <input id="pchDate" type="date" class="form-control">
+                  <div class="mb-2">
+                    <label class="form-label small fw-bold">Material</label>
+                    <select class="form-select" id="materialSelect">
+                      <option value="">Select...</option>
+                    </select>
                   </div>
-                </div>
 
-                <button id="btnPurchaseSubmit" type="button" class="btn btn-success w-100">
-                  <i class="fa-solid fa-check"></i> Submit Purchase Order
+                  <div class="row g-2 mb-3">
+                    <div class="col">
+                      <label class="form-label small fw-bold">Quantity</label>
+                      <input id="pchQty" type="number" class="form-control" placeholder="Quantity">
+                    </div>
+                    <div class="col">
+                      <label class="form-label small fw-bold">Delivery Date</label>
+                      <input id="pchDate" type="date" class="form-control">
+                    </div>
+                  </div>
+
+                  <button id="btnPurchaseSubmit" type="button" class="btn btn-success w-100">
+                    <i class="fa-solid fa-check"></i> Submit Purchase Order
+                  </button>
+                  <div id="poMsg" class="mt-2 fw-bold text-center"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-8">
+              <div class="d-flex justify-content-between mb-2">
+                <h5 class="mb-0">Raw Material Purchase History</h5>
+                <button id="btnPurchaseList" class="btn btn-sm btn-outline-secondary">
+                  <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
-                <div id="poMsg" class="mt-2 fw-bold text-center"></div>
+              </div>
+              <div class="table-responsive border rounded bg-white">
+                <table class="table table-hover text-center mb-0">
+                  <thead class="table-secondary">
+                    <tr>
+                      <th>ID</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                      <th>Supplier</th>
+                      <th>Employee</th>
+                    </tr>
+                  </thead>
+                  <tbody id="poList"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="mb-0">Raw Material Stock Status</h5>
+              <button class="btn btn-sm btn-outline-primary" onclick="adminLoadRawMaterialStockStatus()">
+                Refresh
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th style="width:90px;">ID</th>
+                    <th>Material</th>
+                    <th style="width:140px;">Stock</th>
+                    <th style="width:160px;">Safety Stock</th>
+                    <th style="width:180px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="rawMatStockList">
+                  <tr>
+                    <td colspan="5">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+
+          </div>
+        </div>
+
+        <!-- Production -->
+        <div class="tab-pane fade" id="production-pane">
+          <div class="row justify-content-center">
+            <div class="col-md-8">
+              <div class="card shadow-sm mt-4 border-warning">
+                <div class="card-header bg-warning text-dark fw-bold">
+                  <i class="fa-solid fa-gears"></i> Production Order
+                </div>
+                <div class="card-body">
+                  <p class="text-muted small">
+                    From here you can produce final products using the raw materials in stock. The system will
+                    automatically update the inventory.
+                  </p>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-bold">Product to be Produced</label>
+                    <select id="prodSelectProduct" class="form-select">
+                      <option value="">Select Product...</option>
+                    </select>
+                  </div>
+
+                  <div id="bomInfo" class="alert alert-light border d-none">
+                    <h6 class="fw-bold text-info"><i class="fa-solid fa-clipboard-list"></i> BOM (1 Unit Required):</h6>
+                    <ul id="bomList" class="mb-0 small list-unstyled"></ul>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-bold">Production Quantity</label>
+                    <div class="input-group">
+                      <input type="number" id="prodQty" class="form-control" value="1" min="1">
+                      <span class="input-group-text">Quantity</span>
+                    </div>
+                  </div>
+
+                  <button id="btnExecuteProduction" class="btn btn-dark w-100 py-2">
+                    Start Production
+                  </button>
+
+                  <div id="prodMsg" class="mt-3 fw-bold text-center"></div>
+
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="col-md-8">
-            <div class="d-flex justify-content-between mb-2">
-              <h5 class="mb-0">Raw Material Purchase History</h5>
-              <button id="btnPurchaseList" class="btn btn-sm btn-outline-secondary">
+          <!-- Production History Table -->
+          <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="mb-0">Production History</h5>
+              <button class="btn btn-sm btn-outline-secondary" onclick="adminLoadProductionOrders()">
                 <i class="fa-solid fa-rotate"></i> Refresh
               </button>
             </div>
-            <div class="table-responsive border rounded bg-white">
+            <div class="table-responsive bg-white border rounded">
               <table class="table table-hover text-center mb-0">
-                <thead class="table-secondary">
-                  <tr><th>ID</th><th>Date</th><th>Status</th><th>Total</th><th>Supplier</th><th>Employee</th></tr>
+                <thead class="table-info">
+                  <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Responsible Employee</th>
+                  </tr>
                 </thead>
-                <tbody id="poList"></tbody>
+                <tbody id="prodOrderList"></tbody>
               </table>
             </div>
           </div>
 
-          <hr class="my-4">
+        </div>
 
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h5 class="mb-0">Raw Material Stock Status</h5>
-            <button class="btn btn-sm btn-outline-primary" onclick="adminLoadRawMaterialStockStatus()">
-              Refresh
+
+        <!-- Products -->
+        <div class="tab-pane fade" id="products-pane">
+          <div class="row g-3 mb-4">
+            <div class="col-md-8">
+              <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white"><i class="fa-solid fa-plus"></i> Add Product</div>
+                <div class="card-body">
+                  <form id="addProductForm" class="row g-2">
+                    <div class="col-md-3"><input id="pCode" class="form-control form-control-sm"
+                        placeholder="Product Code">
+                    </div>
+                    <div class="col-md-5"><input id="pName" class="form-control form-control-sm"
+                        placeholder="Product Name">
+                    </div>
+                    <div class="col-md-2"><input id="pPrice" type="number" class="form-control form-control-sm"
+                        placeholder="Price"></div>
+                    <div class="col-md-2"><input id="pStock" type="number" class="form-control form-control-sm"
+                        placeholder="Stock"></div>
+                    <div class="col-md-3"><input id="pColor" class="form-control form-control-sm" placeholder="Color">
+                    </div>
+                    <div class="col-md-3"><input id="pClass" type="number" class="form-control form-control-sm"
+                        placeholder="Class ID"></div>
+                    <div class="col-md-3"><input id="pColl" type="number" class="form-control form-control-sm"
+                        placeholder="Collection ID"></div>
+                    <div class="col-md-3">
+                      <button type="button" id="btnAddProduct" class="btn btn-success btn-sm w-100">Save</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card shadow-sm h-100 border-danger">
+                <div class="card-header bg-danger text-white"><i class="fa-solid fa-trash"></i> Delete Product</div>
+                <div class="card-body d-flex align-items-center">
+                  <div class="input-group">
+                    <input id="delCode" type="text" class="form-control form-control-sm" placeholder="Product Code">
+                    <button class="btn btn-outline-danger btn-sm" type="button" id="btnDeleteProduct">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+              <span class="fw-bold">Product List</span>
+              <div class="d-flex gap-2">
+                <button id="btnProducts" class="btn btn-sm btn-secondary">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body p-0 table-responsive" style="max-height: 500px; overflow-y: auto;">
+              <table class="table table-bordered table-hover text-center table-sm mb-0">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Price with VAT</th>
+                    <th>Color</th>
+                    <th>Stock</th>
+                    <th>Class</th>
+                    <th>Collection</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="productList"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employees -->
+        <div class="tab-pane fade" id="employees-pane">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="card shadow-sm">
+                <div class="card-header bg-success text-white"><i class="fa-solid fa-user-plus"></i> Add Employee</div>
+                <div class="card-body">
+                  <div class="input-group mb-2">
+                    <input id="empFirst" class="form-control form-control-sm" placeholder="First Name">
+                    <input id="empLast" class="form-control form-control-sm" placeholder="Last Name">
+                  </div>
+                  <div class="input-group mb-2">
+                    <input id="empRole" class="form-control form-control-sm" placeholder="Role">
+                    <input id="empPhone" class="form-control form-control-sm" placeholder="Phone">
+                  </div>
+                  <input id="empEmail" class="form-control form-control-sm mb-2" placeholder="Email">
+                  <button id="btnEmpAdd" class="btn btn-success w-100 mt-3">Save</button>
+                  <div id="empMsg" class="small mt-1"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white"><i class="fa-solid fa-user-minus"></i> Delete Employee
+                </div>
+                <div class="card-body">
+                  <div class="input-group">
+                    <input id="empDelId" type="number" class="form-control" placeholder="Enter ID">
+                    <button id="btnEmpDelete" class="btn btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-2">
+            <h5 class="mb-0">Employee List</h5>
+            <button id="btnEmployees" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Full Name</th>
+                  <th>Role</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody id="empList"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Customers -->
+        <div class="tab-pane fade" id="customers-pane">
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <div class="card shadow-sm">
+                <div class="card-header bg-success text-white fw-bold">
+                  <i class="fa-solid fa-user-plus"></i> Add Customer
+                </div>
+                <div class="card-body">
+
+                  <div class="row g-2 mb-2">
+                    <div class="col">
+                      <input id="custFirst" class="form-control form-control-sm" placeholder="First Name">
+                    </div>
+                    <div class="col">
+                      <input id="custLast" class="form-control form-control-sm" placeholder="Last Name">
+                    </div>
+                  </div>
+
+                  <div class="row g-2 mb-2">
+                    <div class="col">
+                      <input id="custPhone" class="form-control form-control-sm" placeholder="Phone">
+                    </div>
+                    <div class="col">
+                      <input id="custEmail" class="form-control form-control-sm" placeholder="Email">
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <input id="custAddress" class="form-control form-control-sm" placeholder="Address">
+                  </div>
+
+                  <div class="row g-2 mb-3">
+                    <div class="col">
+                      <select id="custType" class="form-select form-select-sm">
+                        <option value="">Type (optional)</option>
+                        <option value="domestic">Domestic</option>
+                        <option value="international">International</option>
+                      </select>
+                    </div>
+                    <div class="col">
+                      <input id="custRegionId" type="number" class="form-control form-control-sm"
+                        placeholder="RegionID (domestic)">
+                    </div>
+                    <div class="col">
+                      <input id="custCountryId" type="number" class="form-control form-control-sm"
+                        placeholder="CountryID (international)">
+                    </div>
+                  </div>
+
+                  <button id="btnCustAdd" class="btn btn-success w-100">Save</button>
+                  <div id="custMsg" class="small mt-2 fw-bold"></div>
+
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-5">
+              <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white fw-bold">
+                  <i class="fa-solid fa-user-minus"></i> Delete Customer
+                </div>
+                <div class="card-body">
+                  <div class="input-group">
+                    <input id="custDelId" type="number" class="form-control" placeholder="CustomerID">
+                    <button id="btnCustDelete" class="btn btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-2">
+            <h5 class="mb-0">Customer List</h5>
+            <button id="btnCustomers" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-sync"></i> Refresh
             </button>
           </div>
 
           <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle">
-              <thead class="table-dark">
+            <table class="table table-bordered table-hover text-center table-sm">
+              <thead class="table-light">
                 <tr>
-                  <th style="width:90px;">ID</th>
-                  <th>Material</th>
-                  <th style="width:140px;">Stock</th>
-                  <th style="width:160px;">Safety Stock</th>
-                  <th style="width:180px;">Status</th>
+                  <th>ID</th>
+                  <th>Full Name</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Address</th>
                 </tr>
               </thead>
-              <tbody id="rawMatStockList">
-                <tr><td colspan="5">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-
-        </div>
-      </div>
-
-      <!-- ===================== PRODUCTION ===================== -->
-      <div class="tab-pane fade" id="production-pane">
-        <div class="row justify-content-center">
-          <div class="col-md-8">
-            <div class="card shadow-sm mt-4 border-warning">
-              <div class="card-header bg-warning text-dark fw-bold">
-                <i class="fa-solid fa-gears"></i> Production Order
-              </div>
-              <div class="card-body">
-                <p class="text-muted small">
-                  From here you can produce final products using the raw materials in stock. The system will automatically update the inventory.
-                </p>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Product to be Produced</label>
-                  <select id="prodSelectProduct" class="form-select">
-                    <option value="">Select Product...</option>
-                  </select>
-                </div>
-
-                <div id="bomInfo" class="alert alert-light border d-none">
-                  <h6 class="fw-bold text-info"><i class="fa-solid fa-clipboard-list"></i> BOM (1 Unit Required):</h6>
-                  <ul id="bomList" class="mb-0 small list-unstyled"></ul>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Production Quantity</label>
-                  <div class="input-group">
-                    <input type="number" id="prodQty" class="form-control" value="1" min="1">
-                    <span class="input-group-text">Quantity</span>
-                  </div>
-                </div>
-
-                <button id="btnExecuteProduction" class="btn btn-dark w-100 py-2">
-                  Start Production
-                </button>
-
-                <div id="prodMsg" class="mt-3 fw-bold text-center"></div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== PRODUCTS ===================== -->
-      <div class="tab-pane fade" id="products-pane">
-        <div class="row g-3 mb-4">
-          <div class="col-md-8">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-success text-white"><i class="fa-solid fa-plus"></i> Add Product</div>
-              <div class="card-body">
-                <form id="addProductForm" class="row g-2">
-                  <div class="col-md-3"><input id="pCode" class="form-control form-control-sm" placeholder="Product Code"></div>
-                  <div class="col-md-5"><input id="pName" class="form-control form-control-sm" placeholder="Product Name"></div>
-                  <div class="col-md-2"><input id="pPrice" type="number" class="form-control form-control-sm" placeholder="Price"></div>
-                  <div class="col-md-2"><input id="pStock" type="number" class="form-control form-control-sm" placeholder="Stock"></div>
-                  <div class="col-md-3"><input id="pColor" class="form-control form-control-sm" placeholder="Color"></div>
-                  <div class="col-md-3"><input id="pClass" type="number" class="form-control form-control-sm" placeholder="Class ID"></div>
-                  <div class="col-md-3"><input id="pColl" type="number" class="form-control form-control-sm" placeholder="Collection ID"></div>
-                  <div class="col-md-3">
-                    <button type="button" id="btnAddProduct" class="btn btn-success btn-sm w-100">Save</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card shadow-sm h-100 border-danger">
-              <div class="card-header bg-danger text-white"><i class="fa-solid fa-trash"></i> Delete Product</div>
-              <div class="card-body d-flex align-items-center">
-                <div class="input-group">
-                  <input id="delCode" type="text" class="form-control form-control-sm" placeholder="Product Code">
-                  <button class="btn btn-outline-danger btn-sm" type="button" id="btnDeleteProduct">Delete</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card shadow-sm">
-          <div class="card-header d-flex justify-content-between align-items-center py-2">
-            <span class="fw-bold">Product List</span>
-            <div class="d-flex gap-2">
-              <input id="productSearch" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
-              <button id="btnProducts" class="btn btn-sm btn-secondary">Search</button>
-            </div>
-          </div>
-          <div class="card-body p-0 table-responsive" style="max-height: 500px; overflow-y: auto;">
-            <table class="table table-bordered table-hover text-center table-sm mb-0">
-              <thead class="table-light sticky-top">
-                <tr>
-                  <th>Code</th><th>Name</th><th>Price</th><th>Price with VAT</th><th>Color</th>
-                  <th>Stock</th><th>Class</th><th>Collection</th><th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="productList"></tbody>
+              <tbody id="custList"></tbody>
             </table>
           </div>
         </div>
+
       </div>
+    </div>
 
-      <!-- ===================== EMPLOYEES ===================== -->
-      <div class="tab-pane fade" id="employees-pane">
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <div class="card shadow-sm">
-              <div class="card-header bg-success text-white"><i class="fa-solid fa-user-plus"></i> Add Employee</div>
-              <div class="card-body">
-                <div class="input-group mb-2">
-                  <input id="empFirst" class="form-control form-control-sm" placeholder="First Name">
-                  <input id="empLast" class="form-control form-control-sm" placeholder="Last Name">
-                </div>
-                <div class="input-group mb-2">
-                  <input id="empRole" class="form-control form-control-sm" placeholder="Role">
-                  <input id="empPhone" class="form-control form-control-sm" placeholder="Phone">
-                </div>
-                <input id="empEmail" class="form-control form-control-sm mb-2" placeholder="Email">
-                <button id="btnEmpAdd" class="btn btn-success w-100 mt-3">Save</button>
-                <div id="empMsg" class="small mt-1"></div>
+  </div>
+
+  <!-- Edit Customer Modal -->
+  <div class="modal fade" id="editCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen"></i> Edit Customer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editCustomerForm">
+            <input type="hidden" id="editCustId">
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <label class="form-label small fw-bold">First Name</label>
+                <input id="editCustFirst" class="form-control" disabled>
+              </div>
+              <div class="col">
+                <label class="form-label small fw-bold">Last Name</label>
+                <input id="editCustLast" class="form-control" disabled>
               </div>
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card shadow-sm border-danger">
-              <div class="card-header bg-danger text-white"><i class="fa-solid fa-user-minus"></i> Delete Employee</div>
-              <div class="card-body">
-                <div class="input-group">
-                  <input id="empDelId" type="number" class="form-control" placeholder="Enter ID">
-                  <button id="btnEmpDelete" class="btn btn-outline-danger">Delete</button>
-                </div>
-              </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Email</label>
+              <input id="editCustEmail" type="email" class="form-control" disabled>
             </div>
-          </div>
-        </div>
-
-        <div class="d-flex justify-content-between mb-2">
-          <h5 class="mb-0">Employee List</h5>
-          <button id="btnEmployees" class="btn btn-sm btn-primary"><i class="fa-solid fa-sync"></i> Refresh</button>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover text-center table-sm">
-            <thead class="table-light">
-              <tr><th>ID</th><th>Full Name</th><th>Role</th><th>Phone</th><th>Email</th></tr>
-            </thead>
-            <tbody id="empList"></tbody>
-          </table>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Phone</label>
+              <input id="editCustPhone" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Address</label>
+              <textarea id="editCustAddress" class="form-control" rows="2" required></textarea>
+            </div>
+            <div id="editCustMsg" class="text-center fw-bold mb-2"></div>
+            <button type="submit" class="btn btn-warning w-100 fw-bold">Update Customer</button>
+          </form>
         </div>
       </div>
-
-      <!-- ===================== ✅ CUSTOMERS (NEW) ===================== -->
-      <div class="tab-pane fade" id="customers-pane">
-        <div class="row g-3 mb-3">
-          <div class="col-md-7">
-            <div class="card shadow-sm">
-              <div class="card-header bg-success text-white fw-bold">
-                <i class="fa-solid fa-user-plus"></i> Add Customer
-              </div>
-              <div class="card-body">
-
-                <div class="row g-2 mb-2">
-                  <div class="col">
-                    <input id="custFirst" class="form-control form-control-sm" placeholder="First Name">
-                  </div>
-                  <div class="col">
-                    <input id="custLast" class="form-control form-control-sm" placeholder="Last Name">
-                  </div>
-                </div>
-
-                <div class="row g-2 mb-2">
-                  <div class="col">
-                    <input id="custPhone" class="form-control form-control-sm" placeholder="Phone">
-                  </div>
-                  <div class="col">
-                    <input id="custEmail" class="form-control form-control-sm" placeholder="Email">
-                  </div>
-                </div>
-
-                <div class="mb-2">
-                  <input id="custAddress" class="form-control form-control-sm" placeholder="Address">
-                </div>
-
-                <div class="row g-2 mb-3">
-                  <div class="col">
-                    <select id="custType" class="form-select form-select-sm">
-                      <option value="">Type (optional)</option>
-                      <option value="domestic">Domestic</option>
-                      <option value="international">International</option>
-                    </select>
-                  </div>
-                  <div class="col">
-                    <input id="custRegionId" type="number" class="form-control form-control-sm" placeholder="RegionID (domestic)">
-                  </div>
-                  <div class="col">
-                    <input id="custCountryId" type="number" class="form-control form-control-sm" placeholder="CountryID (international)">
-                  </div>
-                </div>
-
-                <button id="btnCustAdd" class="btn btn-success w-100">Save</button>
-                <div id="custMsg" class="small mt-2 fw-bold"></div>
-
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-5">
-            <div class="card shadow-sm border-danger">
-              <div class="card-header bg-danger text-white fw-bold">
-                <i class="fa-solid fa-user-minus"></i> Delete Customer
-              </div>
-              <div class="card-body">
-                <div class="input-group">
-                  <input id="custDelId" type="number" class="form-control" placeholder="CustomerID">
-                  <button id="btnCustDelete" class="btn btn-outline-danger">Delete</button>
-                </div>
-                <div class="small text-muted mt-2">
-                  Not: Siparişi olan müşteri silinemez (SP engeller).
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-flex justify-content-between mb-2">
-          <h5 class="mb-0">Customer List</h5>
-          <button id="btnCustomers" class="btn btn-sm btn-primary">
-            <i class="fa-solid fa-sync"></i> Refresh
-          </button>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover text-center table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>ID</th><th>Full Name</th><th>Phone</th><th>Email</th><th>Address</th>
-              </tr>
-            </thead>
-            <tbody id="custList"></tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
   </div>
 
-</div>
+  <!-- Edit Product Price Modal -->
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-tag"></i> Update Price</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editProductForm">
+            <input type="hidden" id="editProdCode">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Product Code</label>
+              <input id="displayProdCode" class="form-control" disabled>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">New Price</label>
+              <input id="editProdPrice" type="number" step="0.01" class="form-control" required>
+            </div>
+            <div id="editProdMsg" class="text-center fw-bold mb-2"></div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold">Update Price</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="js/api.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/admin.js"></script>
-<script src="app.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="app.js"></script>

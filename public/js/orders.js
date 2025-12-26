@@ -37,9 +37,9 @@ async function initMyOrdersPage() {
       const dateObj = o.OrderDate ? new Date(o.OrderDate) : null;
       const dateStr = (dateObj && !isNaN(dateObj))
         ? dateObj.toLocaleDateString('tr-TR', {
-            year: 'numeric', month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          })
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        })
         : '-';
 
       let badgeClass = 'bg-secondary';
@@ -48,7 +48,7 @@ async function initMyOrdersPage() {
       else if (o.OrderStatus === 'Shipped') badgeClass = 'bg-info text-dark';
       else if (o.OrderStatus === 'Cancelled') badgeClass = 'bg-danger';
 
-      const totalAmount = Number(o.TotalAmount ?? 0);
+      const totalAmount = Number(o.CalculatedTotal ?? 0);
       const totalStr = Number.isFinite(totalAmount) ? totalAmount.toFixed(2) : '0.00';
 
       tbody.innerHTML += `

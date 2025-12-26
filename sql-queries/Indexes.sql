@@ -1,7 +1,4 @@
 
-USE OttoBagno;
-GO
-
 -- INDEX-1
 -- SalesOrder - CustomerID
 -- This index improves the performance of queries that
