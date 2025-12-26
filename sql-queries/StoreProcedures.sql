@@ -1,7 +1,5 @@
 
--- SP-2 — Add Domestic Customer
--- Assigns an existing customer to a domestic region by inserting
--- a relationship record into the DomesticCustomer table.
+-- SP-1 — Add Domestic Customer
 
 CREATE PROCEDURE sp_AddDomesticCustomer
     @CustomerID INT,
@@ -14,9 +12,7 @@ END;
 GO
 
 
--- SP-3 — Add International Customer
--- Classifies an existing customer as international by linking
--- the customer to a country in the InternationalCustomer table.
+-- SP-2 — Add International Customer
 
 CREATE PROCEDURE sp_AddInternationalCustomer
     @CustomerID INT,
@@ -29,9 +25,7 @@ END;
 GO
 
 
--- SP-4 — Create Sales Order
--- Creates a new sales order for a customer in SalesOrder and
--- returns the newly generated OrderID using SCOPE_IDENTITY().
+-- SP-3 — Create Sales Order
 
       CREATE OR ALTER PROCEDURE [dbo].[sp_CreateSalesOrder]
           @CustomerID INT,
@@ -58,10 +52,7 @@ GO
       GO
 
 
--- SP-5 — Add Order Detail
--- Adds a product line item to a sales order by inserting into
--- OrderDetail (stock changes are expected to be handled by
--- triggers if defined).
+-- SP-4
 
 CREATE PROCEDURE sp_AddOrderDetail
     @OrderID INT,
@@ -70,14 +61,20 @@ CREATE PROCEDURE sp_AddOrderDetail
     @UnitPrice DECIMAL(10,2)
 AS
 BEGIN
+    DECLARE @PName NVARCHAR(100);
+    DECLARE @PColor NVARCHAR(30);
+
+    SELECT @PName = ProductName, @PColor = Color 
+    FROM dbo.Product 
+    WHERE ProductCode = @ProductCode;
+
     INSERT INTO OrderDetail (OrderID, ProductCode, Quantity, UnitPrice)
     VALUES (@OrderID, @ProductCode, @Quantity, @UnitPrice);
 END;
 GO
 
 
--- SP-6 — Add Payment
--- Records a payment made towards a sales order in the Payment table.
+-- SP-5
 
 CREATE PROCEDURE sp_AddPayment
     @OrderID INT,
@@ -90,31 +87,23 @@ BEGIN
 END;
 GO
 
--- SP-7 — Create Purchase Order
--- This stored procedure creates a new purchase order for raw materials,
--- assigns a responsible employee, adds the line item, updates the total
--- amount, and adjusts raw material stock.
+-- SP-6
 
-
-
--- SP-10 — Get Customer Orders
--- Returns all sales orders for a given customer using the
--- pre-aggregated view vSalesOrderTotals.
-
-CREATE OR ALTER PROCEDURE sp_GetCustomerOrders
+CREATE OR ALTER PROCEDURE dbo.sp_GetCustomerOrders
     @CustomerID INT
 AS
 BEGIN
+    SET NOCOUNT ON;
+
     SELECT *
-    FROM vSalesOrderTotals
-    WHERE CustomerID = @CustomerID;
+    FROM dbo.vSalesOrderTotals
+    WHERE CustomerID = @CustomerID
+    ORDER BY OrderDate DESC, OrderID DESC;
 END;
 GO
 
--- SP-12 — List Products
--- Lists active products (IsActive = 1) with an optional free-text
--- search across product code, name, and color. It controls the
--- stocks by joining with the vProductStockStatus view.
+
+-- SP-7
 
 CREATE OR ALTER PROCEDURE dbo.sp_ListProducts
   @Search NVARCHAR(100) = NULL
@@ -131,15 +120,13 @@ BEGIN
     p.StockQuantity,
     p.ClassID,
     p.CollectionID,
-    p.IsActive,
     v.StockStatus
 
   FROM dbo.Product p
   INNER JOIN dbo.vProductStockStatus v
     ON v.ProductCode = p.ProductCode
 
-  WHERE p.IsActive = 1
-    AND (
+  WHERE (
       @Search IS NULL
       OR p.ProductCode LIKE '%' + @Search + '%'
       OR p.ProductName LIKE '%' + @Search + '%'
@@ -157,18 +144,15 @@ END
 GO
 
 
--- SP-13 — Add Product
--- Inserts a new product after validating uniqueness of ProductCode,
--- non-negative price/stock, and existence of ClassID/CollectionID.
-
+-- SP-8
 CREATE OR ALTER PROCEDURE dbo.sp_AddProduct
     @ProductCode   NVARCHAR(20),
     @ProductName   NVARCHAR(100),
     @SalesPrice    DECIMAL(10,2),
     @Color         NVARCHAR(30),
     @StockQuantity INT,
-    @ClassID       INT,
-    @CollectionID  INT
+    @ClassID       INT = NULL,
+    @CollectionID  INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -188,39 +172,13 @@ BEGIN
         IF @CollectionID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.ProductCollection WHERE CollectionID = @CollectionID)
             THROW 50103, 'CollectionID not found.', 1;
 
-        IF EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode AND IsActive = 1)
+        IF EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode)
             THROW 50100, 'ProductCode already exists.', 1;
 
-        IF EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode AND IsActive = 0)
-        BEGIN
-            IF EXISTS (
-                SELECT 1
-                FROM dbo.Product
-                WHERE ProductCode = @ProductCode
-                  AND IsActive = 0
-                  AND ProductName <> @ProductName
-            )
-                THROW 50105, 'Inactive product exists with same code but different name.', 1;
-
-            UPDATE dbo.Product
-            SET ProductName   = @ProductName,
-                SalesPrice    = @SalesPrice,
-                Color         = @Color,
-                StockQuantity = @StockQuantity,
-                ClassID       = @ClassID,
-                CollectionID  = @CollectionID,
-                IsActive      = 1
-            WHERE ProductCode = @ProductCode
-              AND IsActive = 0;
-
-            COMMIT TRANSACTION;
-            RETURN;
-        END
-
         INSERT INTO dbo.Product
-            (ProductCode, ProductName, SalesPrice, Color, StockQuantity, ClassID, CollectionID, IsActive)
+            (ProductCode, ProductName, SalesPrice, Color, StockQuantity, ClassID, CollectionID)
         VALUES
-            (@ProductCode, @ProductName, @SalesPrice, @Color, @StockQuantity, @ClassID, @CollectionID, 1);
+            (@ProductCode, @ProductName, @SalesPrice, @Color, @StockQuantity, @ClassID, @CollectionID);
 
         COMMIT TRANSACTION;
     END TRY
@@ -235,9 +193,8 @@ GO
 
 
 
--- SP-22 — Recalculate Sales Order Total
--- This stored procedure recalculates and updates the total amount
--- of a sales order based on its order details.
+
+-- SP-9
 
 CREATE PROCEDURE sp_RecalculateSalesOrderTotal
     @OrderID INT
@@ -266,27 +223,43 @@ GO
 
 
 
--- SP-25 — Delete Product from Sales
--- This stored procedure marks a product as inactive in the Product table.
+-- SP-10
 
 CREATE OR ALTER PROCEDURE dbo.sp_DeleteProductFromSales
   @ProductCode NVARCHAR(20)
 AS
 BEGIN
-  SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-  IF NOT EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode)
-    THROW 50170, 'Product not found.', 1;
+    IF NOT EXISTS (SELECT 1 FROM dbo.Product WHERE ProductCode = @ProductCode)
+        THROW 50400, 'Product not found.', 1;
 
-  UPDATE dbo.Product
-  SET IsActive = 0
-  WHERE ProductCode = @ProductCode;
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.OrderDetail od
+        JOIN dbo.SalesOrder so ON so.OrderID = od.OrderID
+        WHERE od.ProductCode = @ProductCode
+          AND so.OrderStatus = 'New'
+    )
+        THROW 50401, 'Cannot delete: product exists in NEW sales orders.', 1;
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        DELETE FROM dbo.Product
+        WHERE ProductCode = @ProductCode;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        THROW;
+    END CATCH
 END
 GO
 
--- SP-26 — List Employees
--- This stored procedure retrieves a list of active employees.
 
+-- SP-11
 CREATE OR ALTER PROCEDURE sp_ListEmployee
 AS
 BEGIN
@@ -298,9 +271,7 @@ BEGIN
 END
 GO
 
--- SP-27 — List All Sales Orders
--- This stored procedure retrieves a list of all sales orders.
-
+-- SP-12
 CREATE PROCEDURE sp_ListAllSalesOrders
 AS
 BEGIN
@@ -314,10 +285,7 @@ BEGIN
 END
 GO
 
--- SP-28 — Login Customer
--- Performs a simple customer lookup by first and last name and
--- returns IsAdmin = 1 only when the name is admin admin;
--- otherwise returns IsAdmin = 0.
+-- SP-13
 
 CREATE PROCEDURE sp_LoginCustomer
   @FirstName NVARCHAR(50),
@@ -336,8 +304,7 @@ BEGIN
 END
 GO
 
--- SP-29 — List Product Classes
--- This stored procedure retrieves a list of product classes.
+-- SP-14
 
 CREATE PROCEDURE sp_ListProductClasses
 AS
@@ -350,8 +317,7 @@ BEGIN
 END
 GO
 
--- SP-30 — List Product Collections
--- This stored procedure retrieves a list of product collections.
+-- SP-15
 
 CREATE PROCEDURE sp_ListProductCollections
 AS
@@ -364,9 +330,7 @@ BEGIN
 END
 GO
 
--- SP-31 — List Filtered Products
--- This stored procedure retrieves a list of active products,
--- optionally filtered by class ID and collection ID.
+-- SP-16
 
 CREATE OR ALTER PROCEDURE sp_ListFilteredProducts
   @ClassID INT = NULL,
@@ -378,15 +342,13 @@ BEGIN
   SELECT TOP (500) ProductCode, ProductName, SalesPrice, StockQuantity,
     ClassID, CollectionID
   FROM Product p
-  WHERE IsActive = 1 AND (@ClassID IS NULL OR ClassID = @ClassID)
+  WHERE @ClassID IS NULL OR ClassID = @ClassID
     AND (@CollectionID IS NULL OR CollectionID = @CollectionID)
   ORDER BY p.ProductCode;
 END
 GO
 
--- SP-32 — Get Sales Order Status
--- This stored procedure retrieves the status and total amount
--- of a specific sales order.
+-- SP-17
 
 CREATE PROCEDURE sp_GetSalesOrderStatus
   @OrderID INT
@@ -400,8 +362,7 @@ BEGIN
 END
 GO
 
--- SP-33 — Get Random Employee
--- Returns a random EmployeeID from the Employee table.
+-- SP-18
 
 CREATE OR ALTER PROCEDURE sp_GetRandomEmployeeByRole
   @Role NVARCHAR(50)
@@ -415,8 +376,7 @@ BEGIN
 END
 GO
 
--- SP-34 — Get Order Total
--- Returns TotalAmount for a given sales order (OrderID) from SalesOrder.
+-- SP-19
 
 CREATE PROCEDURE sp_GetOrderTotal
   @OrderID INT
@@ -427,8 +387,7 @@ BEGIN
 END
 GO
 
--- SP-35 — Add Employee
--- This stored procedure adds a new employee to the Employee table.
+-- SP-20
 
 CREATE PROCEDURE sp_AddEmployee
   @FirstName NVARCHAR(50),
@@ -448,9 +407,7 @@ BEGIN
 END
 GO
 
--- SP-36 — Delete Employee
--- Soft-deletes an employee by setting Employee.IsActive = 0.
--- Throws an error if the employee does not exist.
+-- SP-21
 
 CREATE OR ALTER PROCEDURE dbo.sp_DeleteEmployee
   @EmployeeID INT
@@ -484,9 +441,7 @@ END
 GO
 
 
--- SP-37 — List Purchase Orders
--- This stored procedure retrieves a list of purchase orders
--- along with supplier and responsible employee details.
+-- SP-22
 
             CREATE OR ALTER PROCEDURE [dbo].[sp_ListPurchaseOrders]
             AS
@@ -507,7 +462,8 @@ GO
                 LEFT JOIN Employee E ON PO.ResponsibleEmployeeID = E.EmployeeID
                 ORDER BY PO.OrderDate DESC;
             END
-
+            GO
+-- SP-23
 
 CREATE PROCEDURE sp_RecalculatePurchaseOrderTotal
   @PurchaseOrderID INT
@@ -530,9 +486,7 @@ GO
 
 
 
--- SP-39 — Add Purchase Order Detail and Recalculate
--- This stored procedure adds a line item to an existing purchase order
--- and recalculates the total amount of the purchase order.
+-- SP-24
 
 CREATE OR ALTER PROCEDURE sp_AddPurchaseOrderDetailAndRecalc
   @PurchaseOrderID INT,
@@ -563,33 +517,23 @@ BEGIN
 END
 GO
 
--- SP-40 — Execute Production
--- This stored procedure executes a production order by checking
--- raw material stock, updating stock quantities, and recording production.
-
-
-
--- SP-41 — Get Order Details
--- This stored procedure retrieves detailed line items for a specific sales order.
+-- SP-25
 
 CREATE   PROCEDURE [dbo].[sp_GetOrderDetails]
     @OrderID INT
 AS
 BEGIN
     SELECT 
-        P.ProductCode,
-        P.ProductName,
+        OD.ProductCode,
         OD.Quantity,
         OD.UnitPrice,
         (OD.Quantity * OD.UnitPrice) AS LineTotal
     FROM OrderDetail OD
-    JOIN Product P ON OD.ProductCode = P.ProductCode
     WHERE OD.OrderID = @OrderID;
 END;
 GO
 
--- SP-42 — Get Product BOM
--- This stored procedure retrieves the bill of materials for a specific product.
+-- SP-26
 
 CREATE   PROCEDURE [dbo].[sp_GetProductBOM]
     @ProductCode NVARCHAR(20)
@@ -605,8 +549,7 @@ BEGIN
 END;
 GO
 
--- SP-43 — List Customers
--- Lists active customers (IsActive = 1) including identity, contact, and address fields.
+-- SP-27
 
 CREATE OR ALTER PROCEDURE sp_ListCustomers
 AS
@@ -621,15 +564,11 @@ BEGIN
         c.Email,
         c.Address
     FROM Customer c
-    WHERE IsActive = 1
     ORDER BY c.CustomerID;
 END;
 GO
 
--- SP-44 — Delete Customer
--- Soft-deletes a customer by setting IsActive = 0 on Customer and related
--- DomesticCustomer/InternationalCustomer records inside a transaction;
--- returns an error if the customer does not exist.
+-- SP-28
 
 CREATE OR ALTER PROCEDURE dbo.sp_DeleteCustomer
     @CustomerID INT
@@ -678,6 +617,8 @@ BEGIN
 END
 GO
 
+-- SP-29
+
 CREATE PROCEDURE sp_UpdateOrderStatus
     @OrderID INT,
     @NewStatus NVARCHAR(20)
@@ -697,6 +638,8 @@ BEGIN
 END
 GO
 
+-- SP-30
+
 CREATE OR ALTER PROCEDURE sp_UpdateCustomer
     @CustomerID INT,
     @PhoneNumber NVARCHAR(20),
@@ -711,6 +654,8 @@ BEGIN
 END
 GO
 
+-- SP-31
+
 CREATE PROCEDURE sp_GetCustomer
     @CustomerID INT
 AS
@@ -719,6 +664,8 @@ BEGIN
     SELECT * FROM Customer WHERE CustomerID = @CustomerID;
 END
 GO
+
+-- SP-32
 
 CREATE PROCEDURE sp_UpdateProductPrice
     @ProductCode NVARCHAR(20),
@@ -737,6 +684,9 @@ BEGIN
     WHERE ProductCode = @ProductCode;
 END
 GO
+
+-- SP-33
+
             CREATE OR ALTER PROCEDURE [dbo].[sp_CreatePurchaseOrder]
                 @SupplierID INT,
                 @EmployeeID INT = NULL, 
@@ -798,6 +748,8 @@ GO
                 SELECT @NewPOID AS NewPurchaseOrderID;
             END
             GO
+
+-- SP-34
 
             CREATE OR ALTER PROCEDURE sp_ExecuteProduction
                 @ProductCode NVARCHAR(20),
@@ -861,6 +813,8 @@ GO
             END
             GO
 
+-- SP-35
+
             CREATE OR ALTER PROCEDURE sp_GetFirstAvailableSalesEmployee
             AS
             BEGIN
@@ -868,10 +822,11 @@ GO
                 SELECT TOP 1 EmployeeID, FirstName, LastName
                 FROM Employee
                 WHERE Role = 'Sales' AND EmployeeID <> 1
-                ORDER BY EmployeeID; -- Deterministic order
+                ORDER BY EmployeeID;
             END
+            GO
 
-
+-- SP-36
 
             CREATE OR ALTER PROCEDURE sp_UpdateEmployeeRole
                 @EmployeeID INT,
@@ -885,15 +840,13 @@ GO
                     THROW 50005, 'Employee not found.', 1;
                 END
 
-                -- Prevent changing role of the main admin (ID 1) if desired, but for now we allow it except maybe hardcoded logic elsewhere.
-                -- Let's just update.
-
                 UPDATE Employee
                 SET Role = @NewRole
                 WHERE EmployeeID = @EmployeeID;
             END
             GO
 
+-- SP-37
 
             CREATE OR ALTER PROCEDURE sp_UpdatePurchaseOrderStatus
                 @PurchaseOrderID INT,
@@ -913,6 +866,7 @@ GO
             END
             GO
 
+-- SP-38
 
             CREATE OR ALTER PROCEDURE sp_AssignPurchaseOrderEmployee
                 @PurchaseOrderID INT,
@@ -942,6 +896,7 @@ GO
             END
             GO
 
+-- SP-39
 
             CREATE OR ALTER PROCEDURE sp_AssignSalesOrderEmployee
                 @OrderID INT,
@@ -972,6 +927,8 @@ GO
             END
             GO
 
+-- SP-40
+
             CREATE OR ALTER PROCEDURE sp_AssignProductionOrderEmployee
                 @ProductionOrderID INT,
                 @EmployeeID INT
@@ -1001,6 +958,8 @@ GO
             END
             GO
 
+-- SP-41
+
             CREATE OR ALTER PROCEDURE sp_ListProductionOrders
             AS
             BEGIN
@@ -1021,6 +980,8 @@ GO
                 ORDER BY PO.StartDate DESC;
             END
             GO
+
+-- SP-42
 
         CREATE PROCEDURE sp_AddCustomer
             @FirstName NVARCHAR(50),

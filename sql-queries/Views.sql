@@ -5,19 +5,28 @@
 -- This view calculates the total order amount and total number of items
 -- per sales order by aggregating order detail records.
 
-CREATE VIEW vSalesOrderTotals
+CREATE OR ALTER VIEW dbo.vSalesOrderTotals
 AS
 SELECT
     so.OrderID,
     so.OrderDate,
     so.OrderStatus,
     so.CustomerID,
-    SUM(od.LineTotal) AS OrderTotal,
-    SUM(od.Quantity) AS TotalItems
-FROM SalesOrder so
-    LEFT JOIN OrderDetail od ON so.OrderID = od.OrderID
-GROUP BY so.OrderID, so.OrderDate, so.OrderStatus, so.CustomerID;
+
+    od.OrderDetailID,
+    od.ProductCode,
+    od.Quantity,
+    od.UnitPrice,
+    od.LineTotal,
+
+    SUM(od.LineTotal) OVER (PARTITION BY so.OrderID) AS OrderTotal,
+    SUM(od.Quantity)  OVER (PARTITION BY so.OrderID) AS TotalItems
+FROM dbo.SalesOrder so
+LEFT JOIN dbo.OrderDetail od
+    ON od.OrderID = so.OrderID;
 GO
+
+
 
 -- VIEW-2
 -- Product Stock Status
@@ -76,5 +85,3 @@ FROM Product p
 WHERE so.OrderStatus <> 'Cancelled'
 GROUP BY p.ProductCode, p.ProductName;
 GO
-
-

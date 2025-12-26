@@ -1,5 +1,5 @@
 
--- TRIGGER-4
+-- TRIGGER-1
 -- Update Order Status After Payment
 -- This trigger automatically updates the sales order status once
 -- the total completed payments cover the order amount.
@@ -25,6 +25,8 @@ BEGIN
       AND so.OrderID IN (SELECT OrderID FROM inserted);
 END;
 GO
+
+-- TRIGGER-2
 
 CREATE OR ALTER  TRIGGER [dbo].[trg_OrderDetail_StockManager]
 ON [dbo].[OrderDetail]
@@ -66,4 +68,59 @@ BEGIN
 END;
 GO
 ALTER TABLE [dbo].[OrderDetail] ENABLE TRIGGER [trg_OrderDetail_StockManager]
+GO
+
+
+
+CREATE OR ALTER TRIGGER dbo.trg_OrderDetail_FillSnapshot
+ON dbo.OrderDetail
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        LEFT JOIN dbo.Product p ON p.ProductCode = i.ProductCode
+        WHERE p.ProductCode IS NULL
+    )
+    BEGIN
+        THROW 50301, 'Invalid ProductCode. Product not found.', 1;
+    END;
+
+    UPDATE od
+    SET
+        od.ProductCode = p.ProductCode
+    FROM dbo.OrderDetail od
+    JOIN inserted i ON i.OrderDetailID = od.OrderDetailID
+    JOIN dbo.Product p ON p.ProductCode = i.ProductCode;
+END
+GO
+
+
+CREATE OR ALTER TRIGGER dbo.trg_ProductionOrder_FillSnapshot
+ON dbo.ProductionOrder
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        LEFT JOIN dbo.Product p ON p.ProductCode = i.ProductCode
+        WHERE p.ProductCode IS NULL
+    )
+    BEGIN
+        THROW 50321, 'Invalid ProductCode. Product not found.', 1;
+    END;
+
+    UPDATE po
+    SET
+        po.ProductCode = p.ProductCode
+    FROM dbo.ProductionOrder po
+    JOIN inserted i ON i.ProductionOrderID = po.ProductionOrderID
+    JOIN dbo.Product p ON p.ProductCode = i.ProductCode;
+END
 GO
