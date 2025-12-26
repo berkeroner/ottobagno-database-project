@@ -353,33 +353,6 @@ BEGIN
 END
 GO
 
--- SP-17
-
-CREATE PROCEDURE sp_GetSalesOrderStatus
-  @OrderID INT
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  SELECT OrderID, OrderStatus, TotalAmount
-  FROM SalesOrder
-  WHERE OrderID = @OrderID;
-END
-GO
-
--- SP-18
-
-CREATE OR ALTER PROCEDURE sp_GetRandomEmployeeByRole
-  @Role NVARCHAR(50)
-AS
-BEGIN
-  SET NOCOUNT ON;
-  SELECT TOP 1 EmployeeID, FirstName, LastName
-  FROM Employee
-  WHERE Role = @Role
-  ORDER BY NEWID();
-END
-GO
 
 -- SP-19
 
