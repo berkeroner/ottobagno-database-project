@@ -31,15 +31,9 @@ router.post('/checkout-pay', async (req, res) => {
     await tx.begin();
 
     try {
-      const empResult = await new sql.Request(tx)
-        .execute('sp_GetRandomEmployee');
-
-      const salesEmployeeId = empResult.recordset?.[0]?.EmployeeID;
-      if (!salesEmployeeId) throw new Error('No sales employee available.');
-
       const orderResult = await new sql.Request(tx)
         .input('CustomerID', sql.Int, customerId)
-        .input('SalesEmployeeID', sql.Int, salesEmployeeId)
+        .input('SalesEmployeeID', sql.Int, null)
         .input('UsedCurrency', sql.Char(3), usedCurrency)
         .input('CountryID', sql.Int, countryId)
         .execute('sp_CreateSalesOrder');
@@ -85,8 +79,8 @@ router.post('/checkout-pay', async (req, res) => {
 
       const msg = extractSqlMessage(errInside);
 
-      if (msg.toLowerCase().includes('yetersiz')) {
-        return res.status(400).send('Out of stock!');
+      if (msg.toLowerCase().includes('not enough')) {
+        return res.status(400).send('Not enough!');
       }
 
       return res.status(400).send(msg);
@@ -100,41 +94,41 @@ router.post('/checkout-pay', async (req, res) => {
 // LIST ORDERS
 
 router.get('/my-orders', async (req, res) => {
-    const { customerId } = req.query;
+  const { customerId } = req.query;
 
-    if (!customerId) {
-        return res.status(400).send('The customerId is required.');
-    }
+  if (!customerId) {
+    return res.status(400).send('The customerId is required.');
+  }
 
-    try {
-        const pool = await sql.connect(config);
-        const result = await pool.request()
-            .input('CustomerID', sql.Int, customerId)
-            .execute('sp_GetCustomerOrders');
+  try {
+    const pool = await sql.connect(config);
+    const result = await pool.request()
+      .input('CustomerID', sql.Int, customerId)
+      .execute('sp_GetCustomerOrders');
 
-        res.json(result.recordset);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Orders not retrieved: ' + err.message);
-    }
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Orders not retrieved: ' + err.message);
+  }
 });
 
 // ORDER DETAILS
 
 router.get('/details/:orderId', async (req, res) => {
-    const { orderId } = req.params;
+  const { orderId } = req.params;
 
-    try {
-        const pool = await sql.connect(config);
-        const result = await pool.request()
-            .input('OrderID', sql.Int, orderId)
-            .execute('sp_GetOrderDetails');
+  try {
+    const pool = await sql.connect(config);
+    const result = await pool.request()
+      .input('OrderID', sql.Int, orderId)
+      .execute('sp_GetOrderDetails');
 
-        res.json(result.recordset);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Order details not retrieved: ' + err.message);
-    }
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Order details not retrieved: ' + err.message);
+  }
 });
 
 module.exports = router;

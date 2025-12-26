@@ -1,7 +1,4 @@
 
-USE OttoBagno;
-GO
-
 -- INDEX-1
 -- SalesOrder - CustomerID
 -- This index improves the performance of queries that
@@ -74,7 +71,7 @@ CREATE INDEX IX_BillOfMaterials_ProductCode
 ON BillOfMaterials(ProductCode);
 
 
--- INDEX-10
+-- INDEX-9
 -- SalesOrder - OrderDate
 -- This index improves performance for queries that filter or
 -- report sales orders by status and order date.
@@ -83,7 +80,7 @@ CREATE INDEX IX_SalesOrder_Status_OrderDate
 ON SalesOrder (OrderStatus, OrderDate);
 
 
--- INDEX-11
+-- INDEX-10
 -- OrderDetail - ProductCode
 -- This index optimizes product-based sales analysis by accelerating
 -- access to order detail quantities and line totals.
@@ -93,7 +90,7 @@ ON OrderDetail (ProductCode)
 INCLUDE (Quantity, LineTotal, OrderID);
 
 
--- INDEX-12
+-- INDEX-11
 -- Payment - OrderID
 -- This index enhances query efficiency when filtering payment records
 -- by payment status and related sales orders.
@@ -102,7 +99,7 @@ CREATE INDEX IX_Payment_Status_OrderID
 ON Payment (PaymentStatus, OrderID);
 
 
--- INDEX-13
+-- INDEX-12
 -- PurchaseOrder - ExpectedDeliveryDate
 -- This index speeds up purchase order tracking queries based on order
 -- status and expected delivery dates.

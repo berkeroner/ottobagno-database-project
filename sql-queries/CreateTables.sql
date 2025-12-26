@@ -1,7 +1,4 @@
 
-USE OttoBagno;
-GO
-
 CREATE TABLE Country (
     CountryID        INT IDENTITY(1,1) PRIMARY KEY,
     CountryName      NVARCHAR(100) NOT NULL,
@@ -40,8 +37,7 @@ CREATE TABLE Employee (
     LastName       NVARCHAR(50) NOT NULL,
     Role           NVARCHAR(50) NOT NULL,
     PhoneNumber    NVARCHAR(20) NOT NULL,
-    Email          NVARCHAR(250) NOT NULL UNIQUE,
-    IsActive       BIT NOT NULL DEFAULT (1)
+    Email          NVARCHAR(250) NOT NULL UNIQUE
 )
 
 CREATE TABLE Customer (
@@ -51,13 +47,11 @@ CREATE TABLE Customer (
     PhoneNumber    NVARCHAR(20) NOT NULL,
     Email          NVARCHAR(100) NOT NULL UNIQUE,
     Address        NVARCHAR(250) NOT NULL,
-    IsActive       BIT NOT NULL DEFAULT (1)
 )
 
 CREATE TABLE DomesticCustomer (
     CustomerID   INT NOT NULL PRIMARY KEY,
     RegionID     INT NOT NULL,
-    IsActive     BIT NOT NULL DEFAULT (1),
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (RegionID) REFERENCES DomesticRegion(RegionID)
 )
@@ -65,7 +59,6 @@ CREATE TABLE DomesticCustomer (
 CREATE TABLE InternationalCustomer (
     CustomerID   INT NOT NULL PRIMARY KEY,
     CountryID    INT NOT NULL,
-    IsActive     BIT NOT NULL DEFAULT (1),
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (CountryID) REFERENCES Country(CountryID)
 )
@@ -87,7 +80,6 @@ CREATE TABLE Product (
     StockQuantity      INT NOT NULL CONSTRAINT DF_Product_StockQuantity DEFAULT (0),
     ClassID            INT NULL,
     CollectionID       INT NULL,
-    IsActive           BIT NOT NULL DEFAULT(1),
     SalesPriceWithVAT  AS (SalesPrice * 1.20) PERSISTED,
     FOREIGN KEY (ClassID) REFERENCES ProductClass(ClassID),
     FOREIGN KEY (CollectionID) REFERENCES ProductCollection(CollectionID),
@@ -124,7 +116,7 @@ CREATE TABLE BillOfMaterials (
     MaterialID         INT NOT NULL,
     RequiredQuantity   DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (ProductCode, MaterialID),
-    FOREIGN KEY (ProductCode) REFERENCES Product(ProductCode),
+    FOREIGN KEY (ProductCode) REFERENCES Product(ProductCode) ON DELETE CASCADE,
     FOREIGN KEY (MaterialID) REFERENCES RawMaterial(MaterialID),
     CONSTRAINT CK_BOM_RequiredQty CHECK (RequiredQuantity > 0)
 )
@@ -153,7 +145,6 @@ CREATE TABLE OrderDetail (
     ProductCode     NVARCHAR(20) NOT NULL,
     UNIQUE (OrderID, ProductCode),
     FOREIGN KEY (OrderID) REFERENCES SalesOrder(OrderID) ON DELETE CASCADE,
-    FOREIGN KEY (ProductCode) REFERENCES Product(ProductCode),
     CONSTRAINT CK_OrderDetail_Qty CHECK (Quantity > 0),
     CONSTRAINT CK_OrderDetail_UnitPrice CHECK (UnitPrice >= 0)
 )
@@ -177,7 +168,7 @@ CREATE TABLE PurchaseOrder (
     OrderStatus             NVARCHAR(20) NOT NULL DEFAULT ('New'),
     TotalAmount             DECIMAL(12,2) NOT NULL DEFAULT (0),
     SupplierID              INT NOT NULL,
-    ResponsibleEmployeeID   INT NOT NULL,
+    ResponsibleEmployeeID   INT NULL,
     FOREIGN KEY (SupplierID) REFERENCES Supplier(SupplierID),
     FOREIGN KEY (ResponsibleEmployeeID) REFERENCES Employee(EmployeeID),
     CONSTRAINT CK_PurchaseOrder_Status CHECK (OrderStatus IN ('New','Ordered','Received','Cancelled'))
@@ -203,8 +194,7 @@ CREATE TABLE ProductionOrder (
     StartDate              DATE NOT NULL DEFAULT (CONVERT(date, SYSDATETIME())),
     ProductionStatus       NVARCHAR(20) NOT NULL DEFAULT ('Planned'),
     ProductCode            NVARCHAR(20) NOT NULL,
-    ResponsibleEmployeeID  INT NOT NULL,
-    FOREIGN KEY (ProductCode) REFERENCES Product(ProductCode),
+    ResponsibleEmployeeID  INT NULL,
     FOREIGN KEY (ResponsibleEmployeeID) REFERENCES Employee(EmployeeID),
     CONSTRAINT CK_ProductionOrder_Qty CHECK (Quantity > 0),
     CONSTRAINT CK_ProductionOrder_Status CHECK (ProductionStatus IN ('Planned','InProgress','Completed','Cancelled'))

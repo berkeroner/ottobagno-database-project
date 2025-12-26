@@ -47,7 +47,7 @@ router.get('/filtered', async (req, res) => {
   }
 });
 
-// BEST SELLING PRODUCTS (from dbo.vBestSellingProducts)
+// BEST SELLING PRODUCTS
 router.get('/best-sellers', async (req, res) => {
   try {
     const pool = await sql.connect(config);
